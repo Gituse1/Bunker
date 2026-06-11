@@ -12,7 +12,7 @@ public class RoomController {
 
     private final RoomService roomService;
 
-    @GetMapping("/create")
+    @PutMapping("/create")
     private ResponseEntity<?> createRoom() {
         return ResponseEntity.ok(roomService.createRoom());
     }
@@ -22,8 +22,4 @@ public class RoomController {
         return ResponseEntity.ok(roomService.getAllRooms());
     }
 
-    @GetMapping("/continue_game")
-    private ResponseEntity<?> continueGame( String codeToConnect) {
-        return ResponseEntity.ok(roomService.continueGame(codeToConnect));
-    }
 }

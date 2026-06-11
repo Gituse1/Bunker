@@ -1,10 +1,10 @@
 package com.example.bunker.service;
 
 import com.example.bunker.dto.Room.AllRoomsRequest;
+import com.example.bunker.dto.Room.RoomDataRequest;
 import com.example.bunker.dto.Room.RoomRequest;
 import com.example.bunker.model.Room;
-import com.example.bunker.model.RoomPlayer;
-import com.example.bunker.repository.RoomPlayerRepository;
+import com.example.bunker.projection.PlayerProjection;
 import com.example.bunker.repository.RoomRepository;
 import com.example.bunker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +21,9 @@ public class RoomService {
 
     private final UserRepository userRepository;
     private final RoomRepository roomRepository;
-    private final RoomPlayerRepository roomPlayerRepository;
+
     private final AuthService authService;
+    private final RoomPlayerService roomPlayerService;
 
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -38,20 +39,14 @@ public class RoomService {
         room.setIfFinished(false);
         room=roomRepository.save(room);
 
+        long roomPlayerId =roomPlayerService.createRoomPlayer(room).getId();
+
         return RoomRequest.builder()
-                .id(room.getId())
+                .id(roomPlayerId)
                 .codeToConnect(generateToken())
                 .build();
     }
 
-    public RoomPlayer continueGame(String codeToConnect) {
-       Long id =roomRepository.findRoomIdByCode(codeToConnect).orElseThrow(
-               ()->new RuntimeException("Code is not valid or something went wrong"));
-
-       roomPlayerRepository.findRoomPlayerByRoomId(id).orElseThrow(
-               ()->new RuntimeException("Room player is not found but code is valid"));
-
-    }
 
     public List<AllRoomsRequest> getAllRooms() {
 

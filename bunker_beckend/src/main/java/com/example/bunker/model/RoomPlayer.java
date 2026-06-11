@@ -18,9 +18,9 @@ public class RoomPlayer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
-    @OneToOne()
+    @ManyToOne()
     @JoinColumn(name ="room_id")
     private Room room;
 
@@ -30,4 +30,6 @@ public class RoomPlayer {
 
     @Column(name ="joined_at")
     private LocalDateTime joinedAt=LocalDateTime.now();
+
+    private boolean isJoined =true;
 }

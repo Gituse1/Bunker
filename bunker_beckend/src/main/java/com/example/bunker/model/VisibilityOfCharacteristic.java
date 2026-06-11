@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 public class VisibilityOfCharacteristic {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     @Column(name="artefact_hero_visible")
     private boolean artefactHeroIsVisible =false;
