@@ -24,12 +24,21 @@ public class Room {
     @JoinColumn(name = "user_id")
     private User user;
     @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
     @Column(name="finished_at")
-    private LocalDateTime finishedAt =LocalDateTime.now();
+    private LocalDateTime finishedAt;
 
-    private int max_quantity_players =10;
-    private int available_quantity_players =1;
-    private boolean if_finished = false;
+    @Column(name = "code_to_connect")
+    private String codeToConnect;
+
+    @Column(name = "max_quantity_players")
+    private int maxQuantityPlayers =10;
+
+    @Column(name = "available_quantity_players")
+    private int availableQuantityPlayers =1;
+
+    @Column(name = "if_finished")
+    private boolean ifFinished;
+
 }

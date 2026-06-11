@@ -20,11 +20,11 @@ public class RoomPlayer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @ManyToOne()
+    @OneToOne()
     @JoinColumn(name ="room_id")
     private Room room;
 
-    @OneToOne()
+    @ManyToOne()
     @JoinColumn(name ="player_id")
     private Player player;
 

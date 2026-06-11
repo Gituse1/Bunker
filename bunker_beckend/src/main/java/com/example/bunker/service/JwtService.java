@@ -34,7 +34,7 @@ public class JwtService {
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
         return Jwts.builder()
                 .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername()) // Зашиваємо email/логін
+                .setSubject(userDetails.getUsername())// Зашиваємо email/логін
                 .setIssuedAt(new Date(System.currentTimeMillis())) // Час видачі
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // Час дії (24 години)
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256) // Підпис

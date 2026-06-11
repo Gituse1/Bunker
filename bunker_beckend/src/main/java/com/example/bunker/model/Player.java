@@ -31,7 +31,7 @@ public class Player {
 
     @ManyToOne()
     @JoinColumn(name = "character_id")
-    private Character character;
+    private CharacteristicPlayer character;
 
     @ManyToOne()
     @JoinColumn(name ="artifact_hero_id")
