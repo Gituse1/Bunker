@@ -38,7 +38,7 @@ public class AuthService {
     }
 
     public UserResponse loginUser(UserRequestLogin dto) {
-        User user = userRepository.findByUsername(dto.getUsername())
+        User user = userRepository.findByEmail(dto.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("Користувача не знайдено"));
 
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {

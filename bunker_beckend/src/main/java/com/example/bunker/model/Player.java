@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Data
 @Builder
@@ -39,5 +41,17 @@ public class Player {
 
     @ManyToOne()
     @JoinColumn(name ="artifact_random_id")
-    private ArtifactRandomCatalog artifactRandomCatalog;
+    private ArtifactRandomCatalog firstArtifactRandomCatalog;
+
+    @ManyToOne()
+    @JoinColumn(name ="artifact_random_id")
+    private ArtifactRandomCatalog secondArtifactRandomCatalog;
+
+    private LocalDateTime createdAt;
+
+    private boolean IsInGame;
+
+    private StatusInGame status;
+
+
 }

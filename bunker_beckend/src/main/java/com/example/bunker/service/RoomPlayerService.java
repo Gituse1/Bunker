@@ -32,7 +32,6 @@ public class RoomPlayerService {
                 .orElseGet(() ->createRoomPlayer(room));
 
         roomPlayerId=roomPlayer.getId();
-
         List<PlayerProjection> projections = getUserNameByRoomId(room.getId());
 
         List<String> names = new ArrayList<>();

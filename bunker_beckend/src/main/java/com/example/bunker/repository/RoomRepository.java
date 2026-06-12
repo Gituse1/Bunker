@@ -20,7 +20,7 @@ public interface RoomRepository extends JpaRepository<Room,Long> {
             @Param("userId") long id
     ) ;
 
-    Optional<List<Room>> roomsByUserName(String Name);
+    Optional<List<Room>> roomsByUserEmail(String email);
 
     Optional<Room> findRoomByCode(String code);
 

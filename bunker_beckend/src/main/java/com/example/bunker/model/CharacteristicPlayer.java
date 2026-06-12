@@ -16,7 +16,7 @@ public class CharacteristicPlayer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private long id;
 
     private String state_of_health;
     private double grown;

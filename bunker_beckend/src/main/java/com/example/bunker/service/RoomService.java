@@ -1,10 +1,8 @@
 package com.example.bunker.service;
 
 import com.example.bunker.dto.Room.AllRoomsRequest;
-import com.example.bunker.dto.Room.RoomDataRequest;
 import com.example.bunker.dto.Room.RoomRequest;
 import com.example.bunker.model.Room;
-import com.example.bunker.projection.PlayerProjection;
 import com.example.bunker.repository.RoomRepository;
 import com.example.bunker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +30,7 @@ public class RoomService {
 
         Room room = new Room();
 
-        room.setUser(userRepository.findByUsername(authService.getCurrentUserName()).orElseThrow(
+        room.setUser(userRepository.findByEmail(authService.getCurrentUserName()).orElseThrow(
                 ()->new RuntimeException("Data authorisation was damaged")));
 
         room.setCreatedAt(LocalDateTime.now());
@@ -52,7 +50,7 @@ public class RoomService {
 
         String userName =authService.getCurrentUserName();
 
-        List<Room> rooms =roomRepository.roomsByUserName(userName).orElseThrow(
+        List<Room> rooms =roomRepository.roomsByUserEmail(userName).orElseThrow(
                 () -> new RuntimeException("The user has not created any rooms yet.")
         );
         List<AllRoomsRequest> roomsRequests = new ArrayList<>();

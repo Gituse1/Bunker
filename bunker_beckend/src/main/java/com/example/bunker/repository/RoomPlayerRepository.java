@@ -31,23 +31,23 @@ public interface RoomPlayerRepository extends JpaRepository<RoomPlayer,Long> {
             FROM RoomPlayer rp
             JOIN rp.player p
             JOIN p.user u
-            WHERE u.name = :userName AND
+            WHERE u.email = :userEmail AND
             rp.id = :roomPlayerId
             """)
     Optional<RoomPlayer> findByIdCurrentUser(
             @Param("roomPlayerID") Long roomPlayerId,
-            @Param("userName") String name
+            @Param("userEmail") String email
     );
 
     @Query("""
         SELECT rp FROM roomPlayer rp
         JOIN player p ON rp.player.id = p.id
         JOIN users u ON p.user.id = u.id
-        WHERE u.name = :userName AND rp.id = :roomPlayerId
+        WHERE u.email = :userEmail AND rp.id = :roomPlayerId
     """)
     Optional<RoomPlayer> findPlayerByRoomPlayerId(
             @Param("roomPlayerId") Long roomPlayerId,
-            @Param("userName") String userName
+            @Param("userEmail") String userEmail
     );
 
 }
