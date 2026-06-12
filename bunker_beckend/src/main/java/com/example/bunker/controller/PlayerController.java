@@ -22,14 +22,14 @@ public class PlayerController {
     }
 
     @GetMapping("/getArtifacts")
-    public ResponseEntity<?> getArtifacts(){
-        return ResponseEntity.ok(playerService.findRandomArtifactCatalog());
+    public ResponseEntity<?> getArtifacts(Long roomId){
+        return ResponseEntity.ok(playerService.findRandomArtifactCatalog(roomId));
     }
 
 
     @PostMapping("/postArtifacts")
-    public ResponseEntity<?> postTwoArtifacts( Long id1, Long id2){
-
+    public ResponseEntity<?> postTwoArtifacts( Long id1, Long id2,Long roomId){
+        playerService.addTwoArtifacts(id1,id2,roomId);
         return ResponseEntity.ok().build();
     }
 

@@ -5,7 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +33,23 @@ public class SessionService {
     }
     public ProductDTO getSession(Long roomId,String userEmail){
         return redisTemplate.opsForValue().get(redisTemplate(roomId,userEmail));
+    }
+    public List<ProductDTO> getAllSessionByRoomId( Long roomId){
+        String keyPattern = "session"+roomId + ":*";
+
+        Set<String > keys =redisTemplate.keys(keyPattern);
+
+        if(keys.isEmpty()){
+            return Collections.emptyList();
+        }
+        List<ProductDTO> dto = redisTemplate.opsForValue().multiGet(keys);
+
+        if(dto.isEmpty()){
+            return Collections.emptyList();
+        }
+        return dto.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     public void deleteSession(Long roomId,String userEmail){

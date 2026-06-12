@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -16,4 +18,5 @@ public class ProductDTO {
     private Long artifactHeroId;
     private Long artifactRand1Id;
     private Long artifactRand2Id;
+    private List<Long> artifacts;
 }

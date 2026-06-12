@@ -1,5 +1,6 @@
 package com.example.bunker.service;
 
+import com.example.bunker.dto.ProductDTO;
 import com.example.bunker.model.*;
 import com.example.bunker.repository.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -32,8 +33,7 @@ public class PlayerService {
                ()-> buildNewPlayer(user,roomId)
        );
 
-       String email= authService.getCurrentUserName();
-       sessionService.updateSession(roomId,email,dto ->{
+       sessionService.updateSession(roomId, user.getEmail(), dto ->{
            dto.setCharacterId(player.getCharacter().getId());
            dto.setArtifactHeroId(player.getHero().getId());
        });
@@ -41,19 +41,69 @@ public class PlayerService {
        return player;
     }
 
-    public List<ArtifactRandomCatalog> findRandomArtifactCatalog(){
-        return artifactRandomCatalogRepository.findRandomArtifact()
-                .orElseThrow(()-> new EntityNotFoundException("Artifacts not added to database or problem with request"));
+
+
+    public List<ArtifactRandomCatalog> findRandomArtifactCatalog(Long roomId){
+        List<ProductDTO> sessions = sessionService.getAllSessionByRoomId(roomId);
+        long numb;
+        List<ArtifactRandomCatalog> artifactRandomCatalogs;
+        do {
+             artifactRandomCatalogs = artifactRandomCatalogRepository.findRandomArtifact()
+                    .orElseThrow(()-> new EntityNotFoundException("Artifacts not added to database or problem with request"));
+
+           numb = artifactRandomCatalogs.stream()
+                    .filter(artifact -> sessions.stream()
+                            .noneMatch(session ->
+                                    artifact.getId().equals(session.getArtifactRand1Id()) ||
+                                            artifact.getId().equals(session.getArtifactRand2Id())
+                            )
+                    )
+                    .count();
+        }while (numb>0);
+        return  artifactRandomCatalogs;
     }
 
 
+
+    public void addTwoArtifacts(Long id1, Long id2,Long roomId){
+
+        String email = authService.getCurrentUserName();
+       sessionService.updateSession(roomId,email,dto->{
+           dto.setArtifactRand1Id(id1);
+           dto.setArtifactRand2Id(id2);
+       });
+    }
+
     private Player buildNewPlayer(User user,Long roomId) {
-        ArtifactHeroCatalog artifactHeroCatalog = artifactHeroCatalogRepository
+
+        ArtifactHeroCatalog artifactHeroCatalog;
+        List<ProductDTO> productsDTO= sessionService.getAllSessionByRoomId(roomId);
+        long numb;
+        do{
+         artifactHeroCatalog = artifactHeroCatalogRepository
                 .findHeroArtifact()
                 .orElseThrow(() -> new EntityNotFoundException("Hero artifact not added or problem with request"));
-        CharacteristicPlayer characteristicPlayer = characteristicRepository
-                .findRandomArtifact()
-                .orElseThrow(() -> new EntityNotFoundException("Characteristic not added or problem with request"));
+
+            Long currentArtifactId = artifactHeroCatalog.getId();
+
+            numb =productsDTO.stream()
+                 .filter(o->o.getArtifactHeroId() != null && o.getArtifactHeroId().equals(currentArtifactId))
+                 .count();
+        }while (numb>0);
+
+        CharacteristicPlayer characteristicPlayer;
+        do {
+             characteristicPlayer = characteristicRepository
+                    .findRandomArtifact()
+                    .orElseThrow(() -> new EntityNotFoundException("Characteristic not added or problem with request"));
+
+            Long currentCharacteristicId = characteristicPlayer.getId();
+
+            numb =productsDTO.stream()
+                    .filter(o ->o.getCharacterId()!=null && o.getCharacterId().equals(currentCharacteristicId))
+                    .count();
+
+        }while (numb>0);
 
         return playerRepository.save(Player.builder()
                 .user(user)
