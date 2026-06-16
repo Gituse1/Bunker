@@ -15,6 +15,7 @@ public class PlayerController {
 
     private  final PlayerService playerService;
 
+    //Описати поступове додавання характеристик до вже існуючого героя.
     @PostMapping("/create")
     public ResponseEntity<?> createPlayer(Long roomId){
 

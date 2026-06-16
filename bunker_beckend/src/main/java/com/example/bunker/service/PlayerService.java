@@ -26,7 +26,7 @@ public class PlayerService {
 
 
     public Player createPlayer(Long roomId){
-       User user= userRepository.findByEmail(authService.getCurrentUserName())
+       User user= userRepository.findByEmail(authService.getCurrentUserEmail())
                .orElseThrow(()-> new EntityNotFoundException("User not found"));
 
        Player player= playerRepository.findByStatusAndUser(user.getId(),StatusInGame.PREPARATION_FOR_THE_GAME).orElseGet(
@@ -38,11 +38,11 @@ public class PlayerService {
            dto.setArtifactHeroId(player.getHero().getId());
        });
 
-       return player;
+       return playerRepository.save(player);
     }
 
 
-
+    //Змінити логіку бо швидше порівнювати по одному
     public List<ArtifactRandomCatalog> findRandomArtifactCatalog(Long roomId){
         List<ProductDTO> sessions = sessionService.getAllSessionByRoomId(roomId);
         long numb;
@@ -67,7 +67,7 @@ public class PlayerService {
 
     public void addTwoArtifacts(Long id1, Long id2,Long roomId){
 
-        String email = authService.getCurrentUserName();
+        String email = authService.getCurrentUserEmail();
        sessionService.updateSession(roomId,email,dto->{
            dto.setArtifactRand1Id(id1);
            dto.setArtifactRand2Id(id2);

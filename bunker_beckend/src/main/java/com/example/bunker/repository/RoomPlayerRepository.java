@@ -29,7 +29,7 @@ public interface RoomPlayerRepository extends JpaRepository<RoomPlayer,Long> {
     @Query("""
             Select rp
             FROM RoomPlayer rp
-            JOIN rp.player p
+            JOIN FETCH rp.player p
             JOIN p.user u
             WHERE u.email = :userEmail AND
             rp.id = :roomPlayerId

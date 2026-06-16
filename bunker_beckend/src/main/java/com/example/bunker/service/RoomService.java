@@ -30,7 +30,7 @@ public class RoomService {
 
         Room room = new Room();
 
-        room.setUser(userRepository.findByEmail(authService.getCurrentUserName()).orElseThrow(
+        room.setUser(userRepository.findByEmail(authService.getCurrentUserEmail()).orElseThrow(
                 ()->new RuntimeException("Data authorisation was damaged")));
 
         room.setCreatedAt(LocalDateTime.now());
@@ -48,7 +48,7 @@ public class RoomService {
 
     public List<AllRoomsRequest> getAllRooms() {
 
-        String userName =authService.getCurrentUserName();
+        String userName =authService.getCurrentUserEmail();
 
         List<Room> rooms =roomRepository.roomsByUserEmail(userName).orElseThrow(
                 () -> new RuntimeException("The user has not created any rooms yet.")

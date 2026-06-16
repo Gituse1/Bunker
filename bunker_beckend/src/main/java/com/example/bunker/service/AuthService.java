@@ -52,7 +52,7 @@ public class AuthService {
         return new UserResponse(token);
     }
 
-    public String getCurrentUserName() {
+    public String getCurrentUserEmail() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }

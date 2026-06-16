@@ -1,5 +1,6 @@
 package com.example.bunker.dto.Room;
 
+import com.example.bunker.model.Player;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +14,8 @@ import java.util.List;
 @NoArgsConstructor
 public class RoomDataRequest {
 
-    private Long id;
+    private Long roomId;
+    private Player player;
     private List<String> names;
     private List<Long> ids;
 
