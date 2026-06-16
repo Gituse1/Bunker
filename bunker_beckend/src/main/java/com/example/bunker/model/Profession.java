@@ -1,5 +1,5 @@
 package com.example.bunker.model;
 
-enum Profession {
+public enum Profession {
 
 }

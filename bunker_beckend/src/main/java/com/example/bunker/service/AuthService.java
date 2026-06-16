@@ -38,7 +38,7 @@ public class AuthService {
     }
 
     public UserResponse loginUser(UserRequestLogin dto) {
-        User user = userRepository.findByEmail(dto.getUsername())
+        User user = userRepository.findByUsername(dto.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("Користувача не знайдено"));
 
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
@@ -52,7 +52,7 @@ public class AuthService {
         return new UserResponse(token);
     }
 
-    public String getCurrentUserEmail() {
+    public String getCurrentUserName() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }

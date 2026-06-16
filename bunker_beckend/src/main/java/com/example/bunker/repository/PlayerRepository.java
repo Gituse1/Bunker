@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface PlayerRepository extends JpaRepository<Player, Integer> {
 
     @Query("""
-            SELECT * FROM Player p
+            SELECT p FROM Player p
             WHERE p.user = :userId AND
             p.status = :status
             """)

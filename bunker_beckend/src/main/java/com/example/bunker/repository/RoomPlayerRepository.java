@@ -17,8 +17,8 @@ public interface RoomPlayerRepository extends JpaRepository<RoomPlayer,Long> {
     @Query("""
             Select u.name AS name, p.id AS id
             FROM RoomPlayer rp
-            JOIN rp.player p
-            JOIN p.user u
+            JOIN FETCH rp.player p
+            JOIN FETCH p.user u
             WHERE rp.room.id =:roomId
             """)
     Optional<List<PlayerProjection>> findUserNameByRoomId(
@@ -31,23 +31,23 @@ public interface RoomPlayerRepository extends JpaRepository<RoomPlayer,Long> {
             FROM RoomPlayer rp
             JOIN FETCH rp.player p
             JOIN p.user u
-            WHERE u.email = :userEmail AND
+            WHERE u.name = :userName AND
             rp.id = :roomPlayerId
             """)
     Optional<RoomPlayer> findByIdCurrentRoomPlayer(
-            @Param("roomPlayerID") Long roomPlayerId,
-            @Param("userEmail") String email
+            @Param("roomPlayerId") Long roomPlayerId,
+            @Param("userName") String name
     );
 
     @Query("""
         SELECT rp FROM roomPlayer rp
         JOIN player p ON rp.player.id = p.id
         JOIN users u ON p.user.id = u.id
-        WHERE u.email = :userEmail AND rp.id = :roomPlayerId
+        WHERE u.name = :userName AND rp.id = :roomPlayerId
     """)
     Optional<RoomPlayer> findPlayerByRoomPlayerId(
             @Param("roomPlayerId") Long roomPlayerId,
-            @Param("userEmail") String userEmail
+            @Param("userName") String userName
     );
 
 }

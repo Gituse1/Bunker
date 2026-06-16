@@ -15,8 +15,8 @@ public class CharacteristicController {
     private final CharacteristicService characteristicService;
 
     @GetMapping("characteristic")
-    public ResponseEntity<?> getCharacteristic(){
+    public ResponseEntity<?> getCharacteristic(long roomId){
 
-        return ResponseEntity.ok(characteristicService.createCharacteristic());
+        return ResponseEntity.ok(characteristicService.createCharacteristic(roomId));
     }
 }

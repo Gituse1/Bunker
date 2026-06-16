@@ -38,7 +38,7 @@ public class RoomPlayerService {
         Room room =roomRepository.findRoomByCode(codeToConnect).orElseThrow(
                 ()->new RuntimeException("Code is not valid or something went wrong"));
 
-        String userName =authService.getCurrentUserEmail();
+        String userName =authService.getCurrentUserName();
 
         //Знаходимо свого існуючого героя
         RoomPlayer roomPlayer =roomPlayerRepository.findPlayerByRoomPlayerId(room.getId(),userName)
@@ -80,7 +80,7 @@ public class RoomPlayerService {
 
     @Transactional
     public void leaveGame(Long roomPlayerId) {
-        String name =authService.getCurrentUserEmail();
+        String name =authService.getCurrentUserName();
        RoomPlayer roomPlayer= roomPlayerRepository.findByIdCurrentRoomPlayer(roomPlayerId,name).orElseThrow(
                ()->new RuntimeException("Player is not exist"));
 
@@ -135,7 +135,7 @@ public class RoomPlayerService {
                 dto.setArtifactRand1Id(player.getFirstArtifactRandomCatalog().getId());
             }
             if(player.getSecondArtifactRandomCatalog()!=null){
-                dto.setArtifactRand1Id(player.getSecondArtifactRandomCatalog().getId());
+                dto.setArtifactRand2Id(player.getSecondArtifactRandomCatalog().getId());
             }
         };
     }

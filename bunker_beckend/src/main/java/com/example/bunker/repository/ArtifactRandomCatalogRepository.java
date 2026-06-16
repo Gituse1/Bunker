@@ -11,11 +11,11 @@ import java.util.Optional;
 
 public interface ArtifactRandomCatalogRepository  extends JpaRepository<ArtifactRandomCatalog,Integer> {
 
-    @Query(value = "SELECT * FROM artifact_random_catalog ORDER BY RAND() LIMIT 4", nativeQuery = true)
+    @Query(value = "SELECT arc FROM artifact_random_catalog arc ORDER BY RANDOM() LIMIT 4", nativeQuery = true)
     Optional<List<ArtifactRandomCatalog>> findRandomArtifact();
 
     @Query("""
-            Select * FROM artifact_random_catalog arc
+            Select arc FROM artifact_random_catalog arc
             WHERE arc.id = :id1 OR arc.id = :id2
             """)
     Optional<List<ArtifactRandomCatalog>> findByIds(

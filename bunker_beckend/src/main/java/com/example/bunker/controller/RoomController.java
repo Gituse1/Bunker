@@ -12,7 +12,7 @@ public class RoomController {
 
     private final RoomService roomService;
 
-    @PutMapping("/create")
+    @PostMapping("/create")
     private ResponseEntity<?> createRoom() {
         return ResponseEntity.ok(roomService.createRoom());
     }

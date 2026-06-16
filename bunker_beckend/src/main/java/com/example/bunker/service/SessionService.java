@@ -15,13 +15,13 @@ public class SessionService {
 
     private final RedisTemplate<String, ProductDTO> redisTemplate;
 
-    private String redisTemplate(Long roomId,String userEmail){
-        return "session"+roomId+":"+userEmail;
+    private String redisTemplate(Long roomId,String userName){
+        return "session"+roomId+":"+userName;
     }
 
-    public void updateSession(Long roomId, String userEmail, Consumer<ProductDTO> update){
+    public void updateSession(Long roomId, String userName, Consumer<ProductDTO> update){
 
-        String key = redisTemplate(roomId,userEmail);
+        String key = redisTemplate(roomId,userName);
         ProductDTO dto = redisTemplate.opsForValue().get(key);
 
         if(dto == null){
@@ -31,8 +31,8 @@ public class SessionService {
         redisTemplate.opsForValue().set(key,dto);
 
     }
-    public ProductDTO getSession(Long roomId,String userEmail){
-        return redisTemplate.opsForValue().get(redisTemplate(roomId,userEmail));
+    public ProductDTO getSession(Long roomId,String userName){
+        return redisTemplate.opsForValue().get(redisTemplate(roomId,userName));
     }
     public List<ProductDTO> getAllSessionByRoomId( Long roomId){
         String keyPattern = "session"+roomId + ":*";
@@ -52,7 +52,7 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-    public void deleteSession(Long roomId,String userEmail){
-        redisTemplate.delete(redisTemplate(roomId,userEmail));
+    public void deleteSession(Long roomId,String userName){
+        redisTemplate.delete(redisTemplate(roomId,userName));
     }
 }

@@ -9,6 +9,6 @@ import java.util.Optional;
 
 public interface CharacteristicRepository extends JpaRepository<CharacteristicPlayer,Integer> {
 
-    @Query(value = "SELECT * FROM characteristic_player ORDER BY RAND() LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT cp FROM characteristic cp ORDER BY RAND() LIMIT 1", nativeQuery = true)
     Optional<CharacteristicPlayer> findRandomArtifact();
 }

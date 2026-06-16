@@ -40,11 +40,11 @@ public class Player {
     private ArtifactHeroCatalog artifactHeroCatalog;
 
     @ManyToOne()
-    @JoinColumn(name ="artifact_random_id")
+    @JoinColumn(name ="artifact_random1_id")
     private ArtifactRandomCatalog firstArtifactRandomCatalog;
 
     @ManyToOne()
-    @JoinColumn(name ="artifact_random_id")
+    @JoinColumn(name ="artifact_random2_id")
     private ArtifactRandomCatalog secondArtifactRandomCatalog;
 
     private LocalDateTime createdAt;

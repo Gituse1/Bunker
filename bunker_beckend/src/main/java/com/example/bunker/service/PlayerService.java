@@ -27,14 +27,14 @@ public class PlayerService {
 
 
     public Player createPlayer(Long roomId){
-       User user= userRepository.findByEmail(authService.getCurrentUserEmail())
+       User user= userRepository.findByUsername(authService.getCurrentUserName())
                .orElseThrow(()-> new EntityNotFoundException("User not found"));
 
        Player player= playerRepository.findByStatusAndUser(user.getId(),StatusInGame.PREPARATION_FOR_THE_GAME).orElseGet(
                ()-> buildNewPlayer(user,roomId) // тут вся логіка створення нового гравця
        );
 
-       sessionService.updateSession(roomId, user.getEmail(), dto ->{
+       sessionService.updateSession(roomId, user.getUsername(), dto ->{
            dto.setCharacterId(player.getCharacter().getId());
            dto.setArtifactHeroId(player.getHero().getId());
        });
@@ -59,12 +59,12 @@ public class PlayerService {
                             )
                     )
                     .count();
-        }while (numb>0);
+        }while (numb == 0);
         return  artifactRandomCatalogs;
     }
     public ArtifactHeroCatalog addHeroArtifacts(Long roomId){
-        String userEmail = authService.getCurrentUserEmail();
-        ProductDTO userData = sessionService.getSession(roomId, userEmail);
+        String userName = authService.getCurrentUserName();
+        ProductDTO userData = sessionService.getSession(roomId, userName);
         List<ProductDTO>  sessions = sessionService.getAllSessionByRoomId(roomId);
 
         long numb;
@@ -78,19 +78,19 @@ public class PlayerService {
                    .filter(o -> o.getArtifactHeroId().equals(artifactHeroCatalog.getId()) )
                    .count();
 
-        }while (numb>0);
-
-        Player player = playerRepository.findById(Math.toIntExact(userData.getPlayerId()))
-                .orElseThrow(()-> new EntityNotFoundException("Data in Redis was damaged"));
+        }while (numb == 0);
 
 
         if(userData.getPlayerId() == null){
             ArtifactHeroCatalog finalArtifactHeroCatalogResalt = artifactHeroCatalogResalt;
 
-            sessionService.updateSession(roomId,userEmail, dto ->{
+            sessionService.updateSession(roomId,userName, dto ->{
                 dto.setArtifactHeroId(finalArtifactHeroCatalogResalt.getId());
             });
         }
+        Player player = playerRepository.findById(Math.toIntExact(userData.getPlayerId()))
+                .orElseThrow(()-> new EntityNotFoundException("Data in Redis was damaged"));
+
 
         if(!userData.getArtifactHeroId().equals(player.getArtifactHeroCatalog().getId())){
              throw new IllegalArgumentException("In Redis data playerHeroArtifact is not correct " +
@@ -109,10 +109,10 @@ public class PlayerService {
 
     public void addTwoArtifacts(Long id1, Long id2,Long roomId){
 
-        ProductDTO userData = sessionService.getSession(roomId, authService.getCurrentUserEmail());
+        ProductDTO userData = sessionService.getSession(roomId, authService.getCurrentUserName());
 
-        String email = authService.getCurrentUserEmail();
-       sessionService.updateSession(roomId,email,dto->{
+        String userName = authService.getCurrentUserName();
+       sessionService.updateSession(roomId,userName,dto->{
            dto.setArtifactRand1Id(id1);
            dto.setArtifactRand2Id(id2);
        });

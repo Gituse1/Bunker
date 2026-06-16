@@ -12,7 +12,7 @@ public interface RoomRepository extends JpaRepository<Room,Long> {
     Optional<Room> findById(long id);
 
     @Query("""
-            SELECT * FROM Room r
+            SELECT r FROM Room r
             WHERE r.user_id =:userId
             """)
 
@@ -20,7 +20,7 @@ public interface RoomRepository extends JpaRepository<Room,Long> {
             @Param("userId") long id
     ) ;
 
-    Optional<List<Room>> roomsByUserEmail(String email);
+    Optional<List<Room>> roomsByUserName(String name);
 
     Optional<Room> findRoomByCode(String code);
 

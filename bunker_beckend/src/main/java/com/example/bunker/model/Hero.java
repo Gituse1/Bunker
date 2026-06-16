@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@RequiredArgsConstructor
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,8 +17,8 @@ public class Hero {
     private String name;
 
     private Profession profession;
-    @Column(unique = true)
 
+    @Column(unique = true)
     @Enumerated(EnumType.STRING)
     private Rase rase;
 

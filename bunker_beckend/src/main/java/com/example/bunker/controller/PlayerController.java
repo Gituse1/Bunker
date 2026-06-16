@@ -4,10 +4,7 @@ import com.example.bunker.dto.Player.PlayerArtifactRequest;
 import com.example.bunker.service.PlayerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,7 +16,7 @@ public class PlayerController {
     //Описати поступове додавання характеристик до вже існуючого героя.
 
     @GetMapping("/artifacts")
-    public ResponseEntity<?> getArtifacts(Long roomId){
+    public ResponseEntity<?> getArtifacts(@RequestParam Long roomId){
 
         PlayerArtifactRequest playerArtifactRequest = PlayerArtifactRequest.builder()
                 .artifactRandomCatalogs(playerService.findRandomArtifactCatalog(roomId))
@@ -31,7 +28,9 @@ public class PlayerController {
 
 
     @PostMapping("/artifacts")
-    public ResponseEntity<?> postTwoArtifacts( Long id1, Long id2,Long roomId){
+    public ResponseEntity<?> postTwoArtifacts( @RequestParam Long id1,
+                                               @RequestParam Long id2,
+                                               @RequestParam Long roomId){
         playerService.addTwoArtifacts(id1,id2,roomId);
         return ResponseEntity.ok().build();
     }
