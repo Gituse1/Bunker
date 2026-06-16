@@ -7,6 +7,7 @@ import com.example.bunker.model.Room;
 import com.example.bunker.model.RoomPlayer;
 import com.example.bunker.model.StatusInGame;
 import com.example.bunker.projection.PlayerProjection;
+import com.example.bunker.repository.CharacteristicRepository;
 import com.example.bunker.repository.PlayerRepository;
 import com.example.bunker.repository.RoomPlayerRepository;
 import com.example.bunker.repository.RoomRepository;
@@ -25,6 +26,7 @@ public class RoomPlayerService {
     private final RoomPlayerRepository roomPlayerRepository;
     private final RoomRepository roomRepository;
     private final PlayerRepository  playerRepository;
+    private final CharacteristicRepository characteristicRepository;
 
     private final PlayerService  playerService;
     private final SessionService  sessionService;
@@ -61,6 +63,7 @@ public class RoomPlayerService {
             names.add(projection.getName());
             idUser.add(projection.getPlayerId());
         }
+
         //Зберігаємо зміни.
         roomPlayerRepository.save(roomPlayer);
 

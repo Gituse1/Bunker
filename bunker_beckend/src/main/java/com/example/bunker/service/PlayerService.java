@@ -3,6 +3,7 @@ package com.example.bunker.service;
 import com.example.bunker.dto.ProductDTO;
 import com.example.bunker.model.*;
 import com.example.bunker.repository.*;
+import com.example.bunker.repository.VisibilityOfCharacteristicRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ public class PlayerService {
     private final AuthService authService;
     private final SessionService sessionService;
 
+    private final VisibilityOfCharacteristicRepository  visibilityOfCharacteristicRepository;
     private final ArtifactRandomCatalogRepository artifactRandomCatalogRepository;
     private final ArtifactHeroCatalogRepository artifactHeroCatalogRepository;
     private final CharacteristicRepository  characteristicRepository;
@@ -29,7 +31,7 @@ public class PlayerService {
                .orElseThrow(()-> new EntityNotFoundException("User not found"));
 
        Player player= playerRepository.findByStatusAndUser(user.getId(),StatusInGame.PREPARATION_FOR_THE_GAME).orElseGet(
-               ()-> buildNewPlayer(user,roomId)
+               ()-> buildNewPlayer(user,roomId) // тут вся логіка створення нового гравця
        );
 
        sessionService.updateSession(roomId, user.getEmail(), dto ->{
@@ -157,11 +159,16 @@ public class PlayerService {
 
         }while (numb>0);
 
+        VisibilityOfCharacteristic visibilityOfCharacteristic = new VisibilityOfCharacteristic();
+        VisibilityOfCharacteristic visibility = visibilityOfCharacteristicRepository.save(visibilityOfCharacteristic);
+
+
         return playerRepository.save(Player.builder()
                 .user(user)
                 .artifactHeroCatalog(artifactHeroCatalog)
                 .character(characteristicPlayer)
                 .createdAt(LocalDateTime.now())
+                .visibilityOfCharacteristic(visibility)
                 .status(StatusInGame.PREPARATION_FOR_THE_GAME)
                 .build());
     }

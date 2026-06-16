@@ -1,31 +1,24 @@
-package com.example.bunker.model;
+package com.example.bunker.dto.Characteristic;
+
 
 import com.example.bunker.model.characteristic.*;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
-@Table(name ="characteristics")
-public class CharacteristicPlayer {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+@NoArgsConstructor
+@AllArgsConstructor
+public class CharacteristicRequest {
 
     private StateOfHealth state_of_health;
     private Figure figure;
     private PhysicalCondition physical_condition;
-    private double grown;
-
-    @Column(name ="psyhological_state")
     private PsychologicalState psyhologicalState;
     private Secret secret;
+    private double grown;
+
 
 }

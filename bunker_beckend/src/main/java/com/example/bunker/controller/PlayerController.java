@@ -17,13 +17,8 @@ public class PlayerController {
     private  final PlayerService playerService;
 
     //Описати поступове додавання характеристик до вже існуючого героя.
-    @PostMapping("/create")
-    public ResponseEntity<?> createPlayer(Long roomId){
 
-        return ResponseEntity.ok(playerService.createPlayer(roomId));
-    }
-
-    @GetMapping("/getArtifacts")
+    @GetMapping("/artifacts")
     public ResponseEntity<?> getArtifacts(Long roomId){
 
         PlayerArtifactRequest playerArtifactRequest = PlayerArtifactRequest.builder()
@@ -35,7 +30,7 @@ public class PlayerController {
     }
 
 
-    @PostMapping("/postArtifacts")
+    @PostMapping("/artifacts")
     public ResponseEntity<?> postTwoArtifacts( Long id1, Long id2,Long roomId){
         playerService.addTwoArtifacts(id1,id2,roomId);
         return ResponseEntity.ok().build();
