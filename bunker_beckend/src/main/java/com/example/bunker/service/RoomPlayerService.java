@@ -7,6 +7,7 @@ import com.example.bunker.model.Room;
 import com.example.bunker.model.RoomPlayer;
 import com.example.bunker.model.StatusInGame;
 import com.example.bunker.projection.PlayerProjection;
+import com.example.bunker.repository.PlayerRepository;
 import com.example.bunker.repository.RoomPlayerRepository;
 import com.example.bunker.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,8 @@ public class RoomPlayerService {
 
     private final RoomPlayerRepository roomPlayerRepository;
     private final RoomRepository roomRepository;
+    private final PlayerRepository  playerRepository;
+
     private final PlayerService  playerService;
     private final SessionService  sessionService;
 
@@ -37,7 +40,11 @@ public class RoomPlayerService {
 
         //Знаходимо свого існуючого героя
         RoomPlayer roomPlayer =roomPlayerRepository.findPlayerByRoomPlayerId(room.getId(),userName)
-                .orElseGet(() ->createRoomPlayer(room));
+                .orElseGet(() ->{
+                    RoomPlayer newRoomPlayer = createRoomPlayer(room);
+                    newRoomPlayer.setPlayer(playerService.createPlayer(room.getId()));
+                    return newRoomPlayer;
+                });
 
         // Якщо витягнули вже існуючого
         if(roomPlayer.getPlayer().getStatus().equals(StatusInGame.WAS_LEFT_EARLIER)){
@@ -69,13 +76,21 @@ public class RoomPlayerService {
     }
 
     @Transactional
-    public void leaveGame(Long id) {
+    public void leaveGame(Long roomPlayerId) {
         String name =authService.getCurrentUserEmail();
-       RoomPlayer roomPlayer= roomPlayerRepository.findByIdCurrentUser(id,name).orElseThrow(
+       RoomPlayer roomPlayer= roomPlayerRepository.findByIdCurrentRoomPlayer(roomPlayerId,name).orElseThrow(
                ()->new RuntimeException("Player is not exist"));
 
+       if(roomPlayer.getPlayer().getStatus().equals(StatusInGame.PREPARATION_FOR_THE_GAME)){
+           sessionService.deleteSession(roomPlayer.getRoom().getId(),name);
+
+           playerRepository.deleteById(Math.toIntExact(roomPlayer.getPlayer().getId()));
+           roomPlayerRepository.deleteById(roomPlayerId);
+           return;
+       }
        roomPlayer.getPlayer().setStatus(StatusInGame.WAS_LEFT_EARLIER);
        roomPlayer.setJoined(false);
+
        roomPlayerRepository.save(roomPlayer);
     }
 
@@ -84,10 +99,8 @@ public class RoomPlayerService {
 
         RoomPlayer roomPlayer = RoomPlayer.builder()
                 .room(room)
-                .player(playerService.createPlayer(room.getId()))
                 .build();
        return roomPlayerRepository.save(roomPlayer);
-
     }
 
     private List<PlayerProjection> getUsersNameByRoomId(Long roomId){

@@ -34,7 +34,7 @@ public interface RoomPlayerRepository extends JpaRepository<RoomPlayer,Long> {
             WHERE u.email = :userEmail AND
             rp.id = :roomPlayerId
             """)
-    Optional<RoomPlayer> findByIdCurrentUser(
+    Optional<RoomPlayer> findByIdCurrentRoomPlayer(
             @Param("roomPlayerID") Long roomPlayerId,
             @Param("userEmail") String email
     );

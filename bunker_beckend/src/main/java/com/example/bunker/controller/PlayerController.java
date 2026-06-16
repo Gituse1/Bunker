@@ -1,5 +1,6 @@
 package com.example.bunker.controller;
 
+import com.example.bunker.dto.Player.PlayerArtifactRequest;
 import com.example.bunker.service.PlayerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,13 @@ public class PlayerController {
 
     @GetMapping("/getArtifacts")
     public ResponseEntity<?> getArtifacts(Long roomId){
-        return ResponseEntity.ok(playerService.findRandomArtifactCatalog(roomId));
+
+        PlayerArtifactRequest playerArtifactRequest = PlayerArtifactRequest.builder()
+                .artifactRandomCatalogs(playerService.findRandomArtifactCatalog(roomId))
+                .artifactHeroCatalog(playerService.addHeroArtifacts(roomId))
+                .build();
+
+        return ResponseEntity.ok(playerArtifactRequest);
     }
 
 
