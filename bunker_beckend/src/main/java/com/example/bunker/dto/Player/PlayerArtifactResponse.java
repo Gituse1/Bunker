@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class PlayerArtifactRequest {
+public class PlayerArtifactResponse {
 
     ArtifactHeroCatalog artifactHeroCatalog;
     List<ArtifactRandomCatalog> artifactRandomCatalogs;

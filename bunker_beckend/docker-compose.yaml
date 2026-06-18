@@ -1,5 +1,17 @@
 services:
   redis:
-    image: 7-alpine
+    image: redis:7-alpine
     ports:
-      - "6379:6379"
+    - "6379:6379"
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      TZ: UTC
+      PGTZ: UTC
+    command: [ "postgres", "-c", "max_connections=20" ]
+

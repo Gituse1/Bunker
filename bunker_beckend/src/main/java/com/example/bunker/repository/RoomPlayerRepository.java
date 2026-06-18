@@ -15,13 +15,13 @@ public interface RoomPlayerRepository extends JpaRepository<RoomPlayer,Long> {
 
 
     @Query("""
-            Select u.name AS name, p.id AS id
+            Select u.username , p.id
             FROM RoomPlayer rp
-            JOIN FETCH rp.player p
-            JOIN FETCH p.user u
+            JOIN rp.player p
+            JOIN p.user u
             WHERE rp.room.id =:roomId
             """)
-    Optional<List<PlayerProjection>> findUserNameByRoomId(
+    List<PlayerProjection> findUserNameByRoomId(
             @Param("roomId") Long roomId
     );
 
@@ -31,7 +31,7 @@ public interface RoomPlayerRepository extends JpaRepository<RoomPlayer,Long> {
             FROM RoomPlayer rp
             JOIN FETCH rp.player p
             JOIN p.user u
-            WHERE u.name = :userName AND
+            WHERE u.username = :userName AND
             rp.id = :roomPlayerId
             """)
     Optional<RoomPlayer> findByIdCurrentRoomPlayer(
@@ -40,10 +40,10 @@ public interface RoomPlayerRepository extends JpaRepository<RoomPlayer,Long> {
     );
 
     @Query("""
-        SELECT rp FROM roomPlayer rp
-        JOIN player p ON rp.player.id = p.id
-        JOIN users u ON p.user.id = u.id
-        WHERE u.name = :userName AND rp.id = :roomPlayerId
+        SELECT rp FROM RoomPlayer rp
+        JOIN rp.player p
+        JOIN p.user u
+        WHERE u.username = :userName AND rp.id = :roomPlayerId
     """)
     Optional<RoomPlayer> findPlayerByRoomPlayerId(
             @Param("roomPlayerId") Long roomPlayerId,

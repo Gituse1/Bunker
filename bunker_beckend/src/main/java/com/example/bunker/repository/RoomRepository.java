@@ -13,15 +13,20 @@ public interface RoomRepository extends JpaRepository<Room,Long> {
 
     @Query("""
             SELECT r FROM Room r
-            WHERE r.user_id =:userId
+            WHERE r.user.id =:userId
             """)
 
-    Optional<List<Room>> findAllUsersRoom(
+    List<Room> findAllUsersRoom(
             @Param("userId") long id
     ) ;
 
-    Optional<List<Room>> roomsByUserName(String name);
+    @Query("""
+            SELECT r FROM Room r
+            WHERE r.user.username = :userName
+            """)
+    List<Room> roomsByUserName( @Param("userName") String name);
 
-    Optional<Room> findRoomByCode(String code);
+    Optional<Room> findRoomByCodeToConnect(String codeToConnect);
+
 
 }

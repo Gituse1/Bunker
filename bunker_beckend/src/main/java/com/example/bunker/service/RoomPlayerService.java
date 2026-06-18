@@ -1,17 +1,18 @@
 package com.example.bunker.service;
 
 import com.example.bunker.dto.ProductDTO;
-import com.example.bunker.dto.Room.RoomDataRequest;
+import com.example.bunker.dto.Room.RoomDataResponse;
 import com.example.bunker.model.Player;
 import com.example.bunker.model.Room;
 import com.example.bunker.model.RoomPlayer;
 import com.example.bunker.model.StatusInGame;
 import com.example.bunker.projection.PlayerProjection;
-import com.example.bunker.repository.CharacteristicRepository;
 import com.example.bunker.repository.PlayerRepository;
 import com.example.bunker.repository.RoomPlayerRepository;
 import com.example.bunker.repository.RoomRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoomPlayerService {
@@ -26,7 +28,6 @@ public class RoomPlayerService {
     private final RoomPlayerRepository roomPlayerRepository;
     private final RoomRepository roomRepository;
     private final PlayerRepository  playerRepository;
-    private final CharacteristicRepository characteristicRepository;
 
     private final PlayerService  playerService;
     private final SessionService  sessionService;
@@ -34,15 +35,20 @@ public class RoomPlayerService {
     private final AuthService authService;
 
     @Transactional
-    public RoomDataRequest connectToGame(String codeToConnect) {
-        Room room =roomRepository.findRoomByCode(codeToConnect).orElseThrow(
-                ()->new RuntimeException("Code is not valid or something went wrong"));
+    public RoomDataResponse connectToGame(String codeToConnect) {
 
         String userName =authService.getCurrentUserName();
 
-        //Знаходимо свого існуючого героя
+        log.info("user : "+userName+"connectToGame by code : "+codeToConnect);
+
+
+        Room room =roomRepository.findRoomByCodeToConnect(codeToConnect).orElseThrow(
+                ()->new EntityNotFoundException("Code is not valid or something went wrong"));
+
+
+        //Шукаємо чи вже існує створювався герой до цієї кімнати.
         RoomPlayer roomPlayer =roomPlayerRepository.findPlayerByRoomPlayerId(room.getId(),userName)
-                .orElseGet(() ->{
+                .orElseGet(() ->{           //Якщо не знайшли то створюємо нового героя
                     RoomPlayer newRoomPlayer = createRoomPlayer(room);
                     newRoomPlayer.setPlayer(playerService.createPlayer(room.getId()));
                     return newRoomPlayer;
@@ -70,9 +76,9 @@ public class RoomPlayerService {
         sessionService.updateSession(roomPlayer.getRoom().getId(),userName,
                 preparingRequest(roomPlayer));
 
-        return  RoomDataRequest.builder()
+        return  RoomDataResponse.builder()
                 .names(names)
-                .roomId(roomPlayer.getId())
+                .roomId(room.getId())
                 .player(roomPlayer.getPlayer())
                 .ids(idUser)
                 .build();
@@ -81,13 +87,15 @@ public class RoomPlayerService {
     @Transactional
     public void leaveGame(Long roomPlayerId) {
         String name =authService.getCurrentUserName();
+
+        log.info("user : "+name+"leaveGame");
        RoomPlayer roomPlayer= roomPlayerRepository.findByIdCurrentRoomPlayer(roomPlayerId,name).orElseThrow(
-               ()->new RuntimeException("Player is not exist"));
+               ()->new IllegalArgumentException("Player is not exist"));
 
        if(roomPlayer.getPlayer().getStatus().equals(StatusInGame.PREPARATION_FOR_THE_GAME)){
            sessionService.deleteSession(roomPlayer.getRoom().getId(),name);
 
-           playerRepository.deleteById(Math.toIntExact(roomPlayer.getPlayer().getId()));
+           playerRepository.deleteById(roomPlayer.getPlayer().getId());
            roomPlayerRepository.deleteById(roomPlayerId);
            return;
        }
@@ -107,8 +115,11 @@ public class RoomPlayerService {
     }
 
     private List<PlayerProjection> getUsersNameByRoomId(Long roomId){
-        return roomPlayerRepository.findUserNameByRoomId(roomId).orElseThrow(
-                ()->new RuntimeException("Players is not found but code is valid"));
+        List<PlayerProjection> projection= roomPlayerRepository.findUserNameByRoomId(roomId);
+        if(projection.isEmpty()){
+            throw new IllegalArgumentException("Players is not found but code is valid");
+        };
+        return projection;
     }
 
 

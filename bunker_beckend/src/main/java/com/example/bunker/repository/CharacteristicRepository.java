@@ -7,8 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
-public interface CharacteristicRepository extends JpaRepository<CharacteristicPlayer,Integer> {
+public interface CharacteristicRepository extends JpaRepository<CharacteristicPlayer,Long> {
 
-    @Query(value = "SELECT cp FROM characteristic cp ORDER BY RAND() LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT cp FROM characteristic cp ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
     Optional<CharacteristicPlayer> findRandomArtifact();
 }

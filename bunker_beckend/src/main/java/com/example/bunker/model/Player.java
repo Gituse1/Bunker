@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name ="Players")
 public class Player {
 
     @Id
@@ -51,6 +50,7 @@ public class Player {
 
     private boolean IsInGame;
 
+    @Enumerated(EnumType.STRING)
     private StatusInGame status;
 
 

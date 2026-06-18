@@ -8,7 +8,6 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name ="heroes")
 public class Hero {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,6 +15,7 @@ public class Hero {
 
     private String name;
 
+    @Enumerated(EnumType.STRING)
     private Profession profession;
 
     @Column(unique = true)

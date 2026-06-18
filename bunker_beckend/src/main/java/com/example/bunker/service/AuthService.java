@@ -7,6 +7,7 @@ import com.example.bunker.model.User;
 import com.example.bunker.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -23,11 +25,14 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     public UserResponse registerUser(UserRequestRegister dto) {
+
+        log.info("registerUser dto={}",dto);
+
         if (userRepository.existsByUsername(dto.getUsername())) {
-            throw new IllegalArgumentException("Username вже зайнятий");
+            throw new IllegalArgumentException("Username вже зайнятий"+ dto.getUsername());
         }
         if (userRepository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Email вже зайнятий");
+            throw new IllegalArgumentException("Email вже зайнятий"+dto.getEmail());
         }
         User user = UserRequestRegister.toUser(dto, passwordEncoder.encode(dto.getPassword()));
         user.setCreateDate(LocalDateTime.now());
@@ -38,11 +43,13 @@ public class AuthService {
     }
 
     public UserResponse loginUser(UserRequestLogin dto) {
-        User user = userRepository.findByUsername(dto.getUsername())
-                .orElseThrow(() -> new EntityNotFoundException("Користувача не знайдено"));
+
+        log.info("loginUser dto={}",dto);
+        User user = userRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new EntityNotFoundException("Користувача не знайдено"+dto.getEmail()));
 
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Невірний пароль");
+            throw new BadCredentialsException("Невірний пароль"+dto.getPassword());
         }
 
         user.setLastVisit(LocalDateTime.now());

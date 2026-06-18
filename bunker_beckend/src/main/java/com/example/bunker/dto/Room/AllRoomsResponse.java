@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class AllRoomsRequest {
+public class AllRoomsResponse {
 
     private long id;
     private LocalDateTime createdAt;

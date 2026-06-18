@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class RoomRequest {
+public class RoomResponse {
     private String codeToConnect;
     private long id;
 

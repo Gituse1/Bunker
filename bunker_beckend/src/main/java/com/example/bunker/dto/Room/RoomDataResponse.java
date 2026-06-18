@@ -12,7 +12,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RoomDataRequest {
+public class RoomDataResponse {
 
     private Long roomId;
     private Player player;

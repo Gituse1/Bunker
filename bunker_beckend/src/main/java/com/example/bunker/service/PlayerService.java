@@ -6,14 +6,19 @@ import com.example.bunker.repository.*;
 import com.example.bunker.repository.VisibilityOfCharacteristicRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class PlayerService {
+
+    public static final int MAX_NUMBER_OF_CYCLES =20;
 
     private final AuthService authService;
     private final SessionService sessionService;
@@ -26,31 +31,42 @@ public class PlayerService {
     private final UserRepository userRepository;
 
 
+    @Transactional
     public Player createPlayer(Long roomId){
-       User user= userRepository.findByUsername(authService.getCurrentUserName())
-               .orElseThrow(()-> new EntityNotFoundException("User not found"));
+        String userName = authService.getCurrentUserName();
 
-       Player player= playerRepository.findByStatusAndUser(user.getId(),StatusInGame.PREPARATION_FOR_THE_GAME).orElseGet(
+        log.info("Creating player by userName:{}",userName);
+
+        User user= userRepository.findByUsername(userName)
+               .orElseThrow(()-> new EntityNotFoundException("User not found" + userName));
+
+        Player player= playerRepository.findByStatusAndUser(user.getId(),StatusInGame.PREPARATION_FOR_THE_GAME).orElseGet(
                ()-> buildNewPlayer(user,roomId) // тут вся логіка створення нового гравця
-       );
+        );
 
-       sessionService.updateSession(roomId, user.getUsername(), dto ->{
+        sessionService.updateSession(roomId, user.getUsername(), dto ->{
            dto.setCharacterId(player.getCharacter().getId());
            dto.setArtifactHeroId(player.getHero().getId());
-       });
+        });
 
-       return playerRepository.save(player);
+        return playerRepository.save(player);
     }
 
 
     public List<ArtifactRandomCatalog> findRandomArtifactCatalog(Long roomId){
         List<ProductDTO> sessions = sessionService.getAllSessionByRoomId(roomId);
         long numb;
+        long numbCycles=0;//Лічильник ітерацій щоб при недостачі даних запобігти безкінечному циклу
         List<ArtifactRandomCatalog> artifactRandomCatalogs;
         do {
-             artifactRandomCatalogs = artifactRandomCatalogRepository.findRandomArtifact()
-                    .orElseThrow(()-> new EntityNotFoundException("Artifacts not added to database or problem with request"));
-
+            numbCycles++;
+            if(numbCycles>MAX_NUMBER_OF_CYCLES){
+                throw new RuntimeException("Maximum number of cycles reached because most of all RANDOM ARTIFACTS have been busy");
+            }
+             artifactRandomCatalogs = artifactRandomCatalogRepository.findRandomArtifact();
+                   if(artifactRandomCatalogs.isEmpty()){
+                       throw  new EntityNotFoundException("Artifacts not added to database or is problem with request");
+                   }
            numb = artifactRandomCatalogs.stream()
                     .filter(artifact -> sessions.stream()
                             .noneMatch(session ->
@@ -64,21 +80,31 @@ public class PlayerService {
     }
     public ArtifactHeroCatalog addHeroArtifacts(Long roomId){
         String userName = authService.getCurrentUserName();
+
+        log.info("Creating Hero artifacts by userName:{}",userName);
+
         ProductDTO userData = sessionService.getSession(roomId, userName);
         List<ProductDTO>  sessions = sessionService.getAllSessionByRoomId(roomId);
 
         long numb;
+        long numbCycles=0;//Лічильник ітерацій щоб при недостачі даних запобігти безкінечному циклу
         ArtifactHeroCatalog artifactHeroCatalogResalt;
         do{
+            numbCycles++;
+
             ArtifactHeroCatalog artifactHeroCatalog = artifactHeroCatalogRepository.findHeroArtifact()
-                   .orElseThrow(()-> new EntityNotFoundException("Artifacts not added to database or problem with request"));
+                   .orElseThrow(()-> new EntityNotFoundException("Artifacts not added to database or problem with request by userName: " + userName));
 
             artifactHeroCatalogResalt=artifactHeroCatalog;
            numb= sessions.stream()
                    .filter(o -> o.getArtifactHeroId().equals(artifactHeroCatalog.getId()) )
                    .count();
 
-        }while (numb == 0);
+            if(numbCycles>MAX_NUMBER_OF_CYCLES){
+                throw new RuntimeException("Maximum number of cycles reached because most of all HERO ARTIFACTS have been busy");
+            }
+
+        }while (numb > 0);
 
 
         if(userData.getPlayerId() == null){
@@ -88,7 +114,7 @@ public class PlayerService {
                 dto.setArtifactHeroId(finalArtifactHeroCatalogResalt.getId());
             });
         }
-        Player player = playerRepository.findById(Math.toIntExact(userData.getPlayerId()))
+        Player player = playerRepository.findById(userData.getPlayerId())
                 .orElseThrow(()-> new EntityNotFoundException("Data in Redis was damaged"));
 
 
@@ -105,22 +131,27 @@ public class PlayerService {
 
     }
 
-
-
+    @Transactional
     public void addTwoArtifacts(Long id1, Long id2,Long roomId){
 
-        ProductDTO userData = sessionService.getSession(roomId, authService.getCurrentUserName());
 
+        ProductDTO userData = sessionService.getSession(roomId, authService.getCurrentUserName());
         String userName = authService.getCurrentUserName();
+
+        log.info("Adding two artifacts by userName:{}",userName);
        sessionService.updateSession(roomId,userName,dto->{
            dto.setArtifactRand1Id(id1);
            dto.setArtifactRand2Id(id2);
        });
 
-       Player player = playerRepository.findById(Math.toIntExact(userData.getPlayerId())).orElseThrow(
+       Player player = playerRepository.findById(userData.getPlayerId()).orElseThrow(
                ()-> new EntityNotFoundException("Data in Redis was damaged") );
-       List<ArtifactRandomCatalog> randomCatalogs = artifactRandomCatalogRepository.findByIds(id1,id2)
-               .orElseThrow(()-> new EntityNotFoundException("Artifacts not added to database or problem with request"));
+       List<ArtifactRandomCatalog> randomCatalogs = artifactRandomCatalogRepository.findByIds(id1,id2);
+
+       if(randomCatalogs.isEmpty()){
+           throw new EntityNotFoundException("Artifacts not added to database or problem with request");
+       }
+
        player.setFirstArtifactRandomCatalog(randomCatalogs.get(0));
        player.setSecondArtifactRandomCatalog(randomCatalogs.get(1));
 

@@ -1,7 +1,7 @@
 package com.example.bunker.service;
 
-import com.example.bunker.dto.Room.AllRoomsRequest;
-import com.example.bunker.dto.Room.RoomRequest;
+import com.example.bunker.dto.Room.AllRoomsResponse;
+import com.example.bunker.dto.Room.RoomResponse;
 import com.example.bunker.model.Room;
 import com.example.bunker.repository.RoomRepository;
 import com.example.bunker.repository.UserRepository;
@@ -12,6 +12,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -26,42 +27,45 @@ public class RoomService {
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 
-    public RoomRequest createRoom() {
+    public RoomResponse createRoom() {
 
         Room room = new Room();
+        String userName = authService.getCurrentUserName();
 
-        room.setUser(userRepository.findByUsername(authService.getCurrentUserName()).orElseThrow(
+        room.setUser(userRepository.findByUsername(userName).orElseThrow(
                 ()->new RuntimeException("Data authorisation was damaged")));
 
         room.setCreatedAt(LocalDateTime.now());
         room.setIfFinished(false);
         room=roomRepository.save(room);
+        room.setCodeToConnect(generateToken());
 
         long roomPlayerId =roomPlayerService.createRoomPlayer(room).getId();
 
-        return RoomRequest.builder()
+        return RoomResponse.builder()
                 .id(roomPlayerId)
-                .codeToConnect(generateToken())
+                .codeToConnect(room.getCodeToConnect())
                 .build();
     }
 
 
-    public List<AllRoomsRequest> getAllRooms() {
+    public List<AllRoomsResponse> getAllRooms() {
 
         String userName =authService.getCurrentUserName();
 
-        List<Room> rooms =roomRepository.roomsByUserName(userName).orElseThrow(
-                () -> new RuntimeException("The user has not created any rooms yet.")
-        );
-        List<AllRoomsRequest> roomsRequests = new ArrayList<>();
+        List<Room> rooms =roomRepository.roomsByUserName(userName);
+        if(rooms.isEmpty()) {
+            throw new IllegalArgumentException("The user has not created any rooms yet.");
+        }
+        List<AllRoomsResponse> roomsRequests = new ArrayList<>();
         for (Room room : rooms) {
-            AllRoomsRequest allRoomsRequest = AllRoomsRequest.builder()
+            AllRoomsResponse allRoomsResponse = AllRoomsResponse.builder()
                     .createdAt(room.getCreatedAt())
                     .isFinished(room.isIfFinished())
                     .id(room.getId())
                     .CodeToConnect(room.getCodeToConnect())
                     .build();
-            roomsRequests.add(allRoomsRequest);
+            roomsRequests.add(allRoomsResponse);
         }
         return roomsRequests;
     }
@@ -70,12 +74,20 @@ public class RoomService {
 
     public String generateToken() {
         SecureRandom secureRandom = new SecureRandom();
-        StringBuilder sb = new StringBuilder(8);
+        String token;
+        boolean isTokenUnique;
+        do {
+            StringBuilder sb = new StringBuilder(8);
 
-        for (int i = 0; i < 8; i++) {
-            sb.append(ALPHABET.charAt(secureRandom.nextInt(ALPHABET.length())));
-        }
+            for (int i = 0; i < 8; i++) {
+                sb.append(ALPHABET.charAt(secureRandom.nextInt(ALPHABET.length())));
+            }
+            token= sb.toString();
+            Optional<Room> room =roomRepository.findRoomByCodeToConnect(token);
 
-        return sb.toString();
+            isTokenUnique= room.isEmpty();
+
+        }while (!isTokenUnique);
+        return token;
     }
 }

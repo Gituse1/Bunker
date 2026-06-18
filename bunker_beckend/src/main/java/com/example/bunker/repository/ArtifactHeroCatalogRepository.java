@@ -9,6 +9,6 @@ import java.util.Optional;
 public interface ArtifactHeroCatalogRepository  extends JpaRepository<ArtifactHeroCatalog,Long> {
 
 
-    @Query(value = "SELECT ahc FROM artifact_hero_catalog ahc ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT ahc FROM ArtifactHeroCatalog ahc ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
     Optional<ArtifactHeroCatalog> findHeroArtifact();
 }
