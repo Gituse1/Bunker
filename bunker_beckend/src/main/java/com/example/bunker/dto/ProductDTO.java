@@ -18,5 +18,7 @@ public class ProductDTO {
     private Long artifactHeroId;
     private Long artifactRand1Id;
     private Long artifactRand2Id;
+    private boolean isProtected;
+    private boolean isStunned;
 
 }

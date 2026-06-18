@@ -1,6 +1,7 @@
 package com.example.bunker.exeptions;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.NoResultException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
         log.error(e.getMessage(),e);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(e.getMessage());
+    }
+    @ExceptionHandler(NoResultException.class)
+    public ResponseEntity<String> handleNoResultException(NoResultException e) {
+        log.info(e.getMessage(),e);
+        return  ResponseEntity.status(HttpStatus.NO_CONTENT)
+                .body(e.getMessage());
+    }
+    @ExceptionHandler(NumberFormatException.class)
+    public ResponseEntity<String> handleNumberFormatException(NumberFormatException e) {
+        log.warn(e.getMessage(),e);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(e.getMessage());
     }

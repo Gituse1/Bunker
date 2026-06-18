@@ -60,7 +60,7 @@ public class CharacteristicService {
         sessionService.updateSession(roomId, username, dto->{
             dto.setCharacterId(characteristicPlayer1.getId());
         });;
-        return characteristicPlayer;
+        return characteristicPlayer1;
     }
 
     private PhysicalCondition getBalancedPhysicalCondition(StateOfHealth stateOfHealth) {

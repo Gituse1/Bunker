@@ -22,6 +22,7 @@ public class PlayerService {
 
     private final AuthService authService;
     private final SessionService sessionService;
+    private final CharacteristicService characteristicService;
 
     private final VisibilityOfCharacteristicRepository  visibilityOfCharacteristicRepository;
     private final ArtifactRandomCatalogRepository artifactRandomCatalogRepository;
@@ -47,6 +48,8 @@ public class PlayerService {
         sessionService.updateSession(roomId, user.getUsername(), dto ->{
            dto.setCharacterId(player.getCharacter().getId());
            dto.setArtifactHeroId(player.getHero().getId());
+           dto.setProtected(false);
+           dto.setStunned(false);
         });
 
         return playerRepository.save(player);
@@ -178,9 +181,7 @@ public class PlayerService {
 
         CharacteristicPlayer characteristicPlayer;
         do {
-             characteristicPlayer = characteristicRepository
-                    .findRandomArtifact()
-                    .orElseThrow(() -> new EntityNotFoundException("Characteristic not added or problem with request"));
+            characteristicPlayer = characteristicService.createCharacteristic(roomId);
 
             Long currentCharacteristicId = characteristicPlayer.getId();
 

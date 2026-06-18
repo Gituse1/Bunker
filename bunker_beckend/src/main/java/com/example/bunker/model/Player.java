@@ -53,5 +53,8 @@ public class Player {
     @Enumerated(EnumType.STRING)
     private StatusInGame status;
 
+    @OneToOne()
+    private Effect effect;
+
 
 }
