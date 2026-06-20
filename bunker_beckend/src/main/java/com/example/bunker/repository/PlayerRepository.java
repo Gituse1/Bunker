@@ -36,4 +36,11 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
             @Param("id") Long playerId,
             @Param("character") CharacteristicPlayer character
     );
+
+    @Query("""
+            SELECT u.username FROM Player p
+            JOIN p.user u
+            WHERE p.id = :playerId
+            """)
+    Optional<String> findUserNameByPlayerId(@Param("playerId") Long playerId);
 }

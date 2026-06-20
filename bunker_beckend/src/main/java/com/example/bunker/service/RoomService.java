@@ -18,6 +18,8 @@ import java.util.Optional;
 @Service
 public class RoomService {
 
+    private final SecureRandom secureRandom = new SecureRandom();
+
     private final UserRepository userRepository;
     private final RoomRepository roomRepository;
 
@@ -73,7 +75,6 @@ public class RoomService {
 
 
     public String generateToken() {
-        SecureRandom secureRandom = new SecureRandom();
         String token;
         boolean isTokenUnique;
         do {

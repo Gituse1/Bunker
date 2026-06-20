@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("api/randomArtifact/using")
+@RequestMapping("app/randomArtifact/using")
 public class ArtifactController {
 
     private final ArtifactService artifactService;
@@ -18,9 +18,9 @@ public class ArtifactController {
     public ResponseEntity<?> usePurification(@RequestBody Long artifactId,
                                              @RequestBody Long roomId,
                                              @RequestBody Long playerId,
-                                             @RequestBody Characteristic characteristic){
+                                             @RequestBody Characteristic characteristicToChange){
 
-        artifactService.usePurification(artifactId,roomId,playerId,characteristic);
+        artifactService.usePurification(artifactId,roomId,playerId,characteristicToChange);
         return ResponseEntity.ok().build();
     }
 
@@ -52,8 +52,12 @@ public class ArtifactController {
     }
 
     @PutMapping("/curse")
-    private ResponseEntity<?> useCurse(){
+    private ResponseEntity<?> useCurse(@RequestBody Long artifactId,
+                                       @RequestBody Long roomId,
+                                       @RequestBody Long playerId,
+                                       @RequestBody Characteristic characteristicToChange){
 
+        artifactService.useCurse(artifactId,roomId,playerId,characteristicToChange);
         return ResponseEntity.ok().build();
     }
 }
