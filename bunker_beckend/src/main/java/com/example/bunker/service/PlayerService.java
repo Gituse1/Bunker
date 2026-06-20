@@ -48,6 +48,7 @@ public class PlayerService {
         sessionService.updateSession(roomId, user.getUsername(), dto ->{
            dto.setCharacterId(player.getCharacter().getId());
            dto.setArtifactHeroId(player.getHero().getId());
+           dto.setVisibilityId(player.getVisibilityOfCharacteristic().getId());
            dto.setProtected(false);
            dto.setStunned(false);
         });

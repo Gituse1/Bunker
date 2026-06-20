@@ -28,5 +28,6 @@ public interface RoomRepository extends JpaRepository<Room,Long> {
 
     Optional<Room> findRoomByCodeToConnect(String codeToConnect);
 
+    Optional<String> findCodeToConnectByRoomId(Long  roomId);
 
 }

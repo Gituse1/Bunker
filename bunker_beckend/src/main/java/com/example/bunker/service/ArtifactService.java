@@ -2,16 +2,21 @@ package com.example.bunker.service;
 
 import com.example.bunker.dto.Player.GameEventDto;
 import com.example.bunker.dto.Player.PlayerCharacteristicUpdateDto;
+import com.example.bunker.dto.Player.PlayerEffectUpdateDto;
 import com.example.bunker.dto.ProductDTO;
 import com.example.bunker.dto.ProductDTORequest;
 import com.example.bunker.model.ActionTypeArtifact;
 import com.example.bunker.model.CharacteristicPlayer;
+import com.example.bunker.model.EffectsName;
+import com.example.bunker.model.VisibilityOfCharacteristic;
 import com.example.bunker.model.characteristic.Characteristic;
 import com.example.bunker.model.characteristic.Figure;
 import com.example.bunker.model.characteristic.PhysicalCondition;
 import com.example.bunker.model.characteristic.PsychologicalState;
 import com.example.bunker.repository.CharacteristicRepository;
 import com.example.bunker.repository.PlayerRepository;
+import com.example.bunker.repository.RoomRepository;
+import com.example.bunker.repository.VisibilityOfCharacteristicRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.NoResultException;
 import lombok.RequiredArgsConstructor;
@@ -31,18 +36,20 @@ public class ArtifactService {
 
     private final CharacteristicRepository characteristicRepository;
     private final PlayerRepository playerRepository;
+    private final RoomRepository roomRepository;
+    private final VisibilityOfCharacteristicRepository visibilityOfCharacteristicRepository;
 
     private final SimpMessagingTemplate messagingTemplate;
 
+    @Transactional
+    public void usePurification(Long artifactId, Long roomId, Long targetPlayerId, Characteristic characteristic) {
 
-    public void usePurification(Long artifactId, Long roomId, Long playerId, Characteristic characteristic) {
-
-        ProductDTORequest productDTORequest =auditData(roomId,playerId);
-        ProductDTO firstUser =productDTORequest.getProductDTO1();
-        ProductDTO secondUser =productDTORequest.getProductDTO2();
-        if(firstUser.getArtifactRand1Id().equals(artifactId)||firstUser.getArtifactRand2Id().equals(artifactId)){
+        ProductDTORequest productDTORequest = auditData(roomId, targetPlayerId);
+        ProductDTO firstUser = productDTORequest.getProductDTO1();
+        ProductDTO secondUser = productDTORequest.getProductDTO2();
+        if (firstUser.getArtifactRand1Id().equals(artifactId) || firstUser.getArtifactRand2Id().equals(artifactId)) {
             CharacteristicPlayer characteristicPlayer = characteristicRepository.findById(secondUser.getCharacterId())
-                    .orElseThrow(()-> new EntityNotFoundException("In Redis characteristicId is not correct"));
+                    .orElseThrow(() -> new EntityNotFoundException("In Redis characteristicId is not correct"));
             switch (characteristic) {
                 case PHYSICAL_CONDITION -> {
                     switch (characteristicPlayer.getPhysicalCondition()) {
@@ -92,97 +99,15 @@ public class ArtifactService {
                     }
                 }
             }
-            characteristicRepository.save(characteristicPlayer);
-        }
-    }
-
-
-    public void underEffect(Long roomId, Long artifactId, ActionTypeArtifact actionTypeArtifact ) {
-
-        String userName = authService.getCurrentUserName();
-        ProductDTO firstUser =sessionService.getSession(roomId,userName);
-        if(firstUser==null){
-            throw new IllegalArgumentException("Data in Redis was broken or room Id is not correct");
-        }
-        if(firstUser.getArtifactRand1Id().equals(artifactId)||firstUser.getArtifactRand2Id().equals(artifactId)){
-            sessionService.updateSession(roomId,userName, dto ->{
-                if(actionTypeArtifact.equals(ActionTypeArtifact.STUN)){
-                    if(!firstUser.isStunned()){ //false by default
-                        dto.setStunned(true);
-                    }
-                }
-                if(actionTypeArtifact.equals(ActionTypeArtifact.PROTECTION)) {
-                    if (!firstUser.isProtected()) { //false by default
-                        dto.setProtected(true);
-                    }
-                }
-            });
-        }
-    }
-
-    public void useCurse(Long artifactId, Long roomId, Long targetPlayerId, Characteristic characteristic){
-
-        ProductDTORequest productDTORequest =auditData(roomId,targetPlayerId);
-        ProductDTO firstUser =productDTORequest.getProductDTO1();
-        ProductDTO secondUser =productDTORequest.getProductDTO2();
-        if (firstUser.getArtifactRand1Id().equals(artifactId) || firstUser.getArtifactRand2Id().equals(artifactId)) {
-            CharacteristicPlayer characteristicPlayer = characteristicRepository.findById(secondUser.getCharacterId())
-                    .orElseThrow(() -> new EntityNotFoundException("In Redis characteristicId is not correct"));
-
-            switch (characteristic) {
-                case PHYSICAL_CONDITION -> {
-                    switch (characteristicPlayer.getPhysicalCondition()) {
-                        case STRONG ->
-                                characteristicPlayer.setPhysicalCondition(PhysicalCondition.DISABILITY);
-                        case DISABILITY ->
-                                characteristicPlayer.setPhysicalCondition(PhysicalCondition.WOUNDED);
-                        case WOUNDED ->
-                                characteristicPlayer.setPhysicalCondition(PhysicalCondition.WEAK);
-                        case WEAK ->
-                                throw new NoResultException("There is nothing weaker than weak");
-                        default ->
-                                throw new IllegalArgumentException("Invalid physical characteristic value");
-                    }
-                }
-                case PSYCHOLOGICAL_STATE -> {
-                    switch (characteristicPlayer.getPsyhologicalState()) {
-                        case HAPPY ->
-                                characteristicPlayer.setPsyhologicalState(PsychologicalState.STABLE);
-                        case STABLE ->
-                                characteristicPlayer.setPsyhologicalState(PsychologicalState.UNSTABLE);
-                        case AGGRESSIVE, UNSTABLE, PARANOID ->
-                                characteristicPlayer.setPsyhologicalState(PsychologicalState.BIPOLAR);
-                        case BIPOLAR ->
-                                throw new NoResultException("There is nothing worse than bipolar state");
-                        default ->
-                                throw new IllegalArgumentException("Invalid psychological characteristic value");
-                    }
-                }
-                case FIGURE -> {
-                    switch (characteristicPlayer.getFigure()) {
-                        case MUTATED ->
-                                characteristicPlayer.setFigure(Figure.STRONG_BUILD);
-                        case STRONG_BUILD ->
-                                characteristicPlayer.setFigure(Figure.ATHLETIC);
-                        case ATHLETIC ->
-                            characteristicPlayer.setFigure(Figure.SLIM);
-                        case SLIM ->
-                                characteristicPlayer.setFigure(Figure.THIN);
-                        case THIN ->
-                                throw new NoResultException("There is nothing thinner than thin");
-                        default ->
-                                throw new IllegalArgumentException("Invalid figure characteristic value");
-                    }
-                }
-            }
             characteristicPlayer = characteristicRepository.save(characteristicPlayer);
 
+            //Надсилання повідомлення
             PlayerCharacteristicUpdateDto updateDto = new PlayerCharacteristicUpdateDto(
                     characteristic,
                     characteristicPlayer.getFigure().toString()
             );
 
-            String targetUserName =playerRepository.findUserNameByPlayerId(targetPlayerId)
+            String targetUserName = playerRepository.findUserNameByPlayerId(targetPlayerId)
                     .orElseThrow(() -> new EntityNotFoundException("User name is not found"));
 
             messagingTemplate.convertAndSendToUser(
@@ -191,26 +116,203 @@ public class ArtifactService {
                     , updateDto
             );
             GameEventDto gameEventDto = new GameEventDto(
-                    "Гравець " + firstUser + " поранив гравця " + targetUserName,
+                    "Гравець " + authService.getCurrentUserName() + " Підвищив характеристики гравця " + targetUserName,
                     targetUserName,
                     ActionTypeArtifact.CURSE,
                     characteristic,
                     characteristicPlayer.getFigure().toString()
             );
+            messagingTemplate.convertAndSend(
+                    "/topic/room." + roomRepository.findCodeToConnectByRoomId(roomId),
+                    gameEventDto
+            );
+        }
+    }
+
+    @Transactional
+    public void underEffect(Long roomId, Long artifactId, ActionTypeArtifact actionTypeArtifact) {
+
+        String userName = authService.getCurrentUserName();
+        ProductDTO firstUser = sessionService.getSession(roomId, userName);
+        String nameOfEffect = "";
+        int durationOfEffect = 1;
+        if (firstUser == null) {
+            throw new IllegalArgumentException("Data in Redis was broken or room Id is not correct");
+        }
+        if (firstUser.getArtifactRand1Id().equals(artifactId) || firstUser.getArtifactRand2Id().equals(artifactId)) {
+
+            if (actionTypeArtifact.equals(ActionTypeArtifact.STUN)) {
+                if (!firstUser.isStunned()) { //false by default
+                    nameOfEffect = EffectsName.Stun.toString();
+                    sessionService.updateSession(roomId, userName, dto -> {
+                        dto.setStunned(true);
+                    });
+                }
+            }
+
+            if (actionTypeArtifact.equals(ActionTypeArtifact.PROTECTION)) {
+                if (!firstUser.isProtected()) { //false by default
+                    nameOfEffect = EffectsName.Protect.toString();
+                    sessionService.updateSession(roomId, userName, dto -> {
+                        dto.setProtected(true);
+                    });
+                }
+            }
+
+
+        }
+        PlayerEffectUpdateDto updateDto = new PlayerEffectUpdateDto(
+                nameOfEffect,
+                durationOfEffect,
+                true
+        );
+
+        messagingTemplate.convertAndSendToUser(
+                userName,
+                "/queue/my-status"
+                , updateDto
+
+        );
+    }
+
+    @Transactional
+    public void useCurse(Long artifactId, Long roomId, Long targetPlayerId, Characteristic characteristic) {
+
+        ProductDTORequest productDTORequest = auditData(roomId, targetPlayerId);
+        ProductDTO firstUser = productDTORequest.getProductDTO1();
+        ProductDTO targetUser = productDTORequest.getProductDTO2();
+
+        if (firstUser.getArtifactRand1Id().equals(artifactId) || firstUser.getArtifactRand2Id().equals(artifactId)) {
+            CharacteristicPlayer characteristicPlayer = characteristicRepository.findById(targetUser.getCharacterId())
+                    .orElseThrow(() -> new EntityNotFoundException("In Redis characteristicId is not correct"));
+
+            switch (characteristic) {
+                case PHYSICAL_CONDITION -> {
+                    switch (characteristicPlayer.getPhysicalCondition()) {
+                        case STRONG -> characteristicPlayer.setPhysicalCondition(PhysicalCondition.DISABILITY);
+                        case DISABILITY -> characteristicPlayer.setPhysicalCondition(PhysicalCondition.WOUNDED);
+                        case WOUNDED -> characteristicPlayer.setPhysicalCondition(PhysicalCondition.WEAK);
+                        case WEAK -> throw new NoResultException("There is nothing weaker than weak");
+                        default -> throw new IllegalArgumentException("Invalid physical characteristic value");
+                    }
+                }
+                case PSYCHOLOGICAL_STATE -> {
+                    switch (characteristicPlayer.getPsyhologicalState()) {
+                        case HAPPY -> characteristicPlayer.setPsyhologicalState(PsychologicalState.STABLE);
+                        case STABLE -> characteristicPlayer.setPsyhologicalState(PsychologicalState.UNSTABLE);
+                        case AGGRESSIVE, UNSTABLE, PARANOID ->
+                                characteristicPlayer.setPsyhologicalState(PsychologicalState.BIPOLAR);
+                        case BIPOLAR -> throw new NoResultException("There is nothing worse than bipolar state");
+                        default -> throw new IllegalArgumentException("Invalid psychological characteristic value");
+                    }
+                }
+                case FIGURE -> {
+                    switch (characteristicPlayer.getFigure()) {
+                        case MUTATED -> characteristicPlayer.setFigure(Figure.STRONG_BUILD);
+                        case STRONG_BUILD -> characteristicPlayer.setFigure(Figure.ATHLETIC);
+                        case ATHLETIC -> characteristicPlayer.setFigure(Figure.SLIM);
+                        case SLIM -> characteristicPlayer.setFigure(Figure.THIN);
+                        case THIN -> throw new NoResultException("There is nothing thinner than thin");
+                        default -> throw new IllegalArgumentException("Invalid figure characteristic value");
+                    }
+                }
+            }
+            characteristicPlayer = characteristicRepository.save(characteristicPlayer);
+
+            //Надсилання повідомлення
+            PlayerCharacteristicUpdateDto updateDto = new PlayerCharacteristicUpdateDto(
+                    characteristic,
+                    characteristicPlayer.getFigure().toString()
+            );
+
+            String targetUserName = playerRepository.findUserNameByPlayerId(targetPlayerId)
+                    .orElseThrow(() -> new EntityNotFoundException("User name is not found"));
+
+            messagingTemplate.convertAndSendToUser(
+                    targetUserName,
+                    "/queue/my-status"
+                    , updateDto
+            );
+            GameEventDto gameEventDto = new GameEventDto(
+                    "Гравець " + authService.getCurrentUserName() + " Понизив характеристики гравця " + targetUserName,
+                    targetUserName,
+                    ActionTypeArtifact.CURSE,
+                    characteristic,
+                    characteristicPlayer.getFigure().toString()
+            );
+            messagingTemplate.convertAndSend(
+                    "/topic/room." + roomRepository.findCodeToConnectByRoomId(roomId),
+                    gameEventDto
+            );
 
         }
     }
 
-    private ProductDTORequest auditData(Long roomId,Long playerId){
+    //При поточному написанні програми буде дуже багато Case і ще більше повторюваного коду.
+    @Transactional
+    public void useEspionage(Long artifactId, Long roomId, Long targetPlayerId, Characteristic characteristic) {
+        String targetUserName = playerRepository.findUserNameByPlayerId(targetPlayerId)
+                .orElseThrow(() -> new EntityNotFoundException("User name is not found"));
+
+        String currentUserName = authService.getCurrentUserName();
+
+        ProductDTO turgetProductDTO = sessionService.getSession(roomId, targetUserName);
+
+        VisibilityOfCharacteristic visibility = visibilityOfCharacteristicRepository.findById(turgetProductDTO.getVisibilityId())
+                .orElseThrow(() -> new EntityNotFoundException("Visibility is not found"));
+
+        CharacteristicPlayer characteristicPlayer = characteristicRepository.findById(turgetProductDTO.getCharacterId())
+                .orElseThrow(() -> new EntityNotFoundException("Characteristic is not found"));
+
+
+        switch (characteristic) {
+
+            case FIGURE -> {
+                if (!visibility.isFigureIsVisible()) {
+
+                    PlayerCharacteristicUpdateDto playerCharacteristicUpdateDto = new PlayerCharacteristicUpdateDto(
+                            characteristic,
+                            characteristicPlayer.getFigure().toString()
+                    );
+                    messagingTemplate.convertAndSendToUser(
+                            currentUserName,
+                            "/queue/my-status",
+                            playerCharacteristicUpdateDto
+                    );
+                }
+                break;
+            }
+            case PSYCHOLOGICAL_STATE -> {
+                if (!visibility.isPsyhologicalStateIsVisible()) {
+
+                    PlayerCharacteristicUpdateDto playerCharacteristicUpdateDto = new PlayerCharacteristicUpdateDto(
+                            characteristic,
+                            characteristicPlayer.getPsyhologicalState().toString()
+                    );
+                    messagingTemplate.convertAndSendToUser(
+                            currentUserName,
+                            "/queue/my-status",
+                            playerCharacteristicUpdateDto
+                    );
+                }
+                break;
+            }
+
+
+
+        }
+    }
+
+    private ProductDTORequest auditData(Long roomId, Long playerId) {
         String firstUserName = authService.getCurrentUserName();
 
-        ProductDTO firstUser = sessionService.getSession(roomId,firstUserName);
-        if(firstUser==null){
-            throw new IllegalArgumentException("Invalid room id because there is no player in Redis.Room id: "+roomId);
+        ProductDTO firstUser = sessionService.getSession(roomId, firstUserName);
+        if (firstUser == null) {
+            throw new IllegalArgumentException("Invalid room id because there is no player in Redis.Room id: " + roomId);
         }
 
         ProductDTO secondUser = firstUser;
-        if(!firstUser.getPlayerId().equals(playerId)) {
+        if (!firstUser.getPlayerId().equals(playerId)) {
 
             List<ProductDTO> productDTOS = sessionService.getAllSessionByRoomId(roomId);
 
@@ -226,26 +328,6 @@ public class ArtifactService {
                 .productDTO1(firstUser)
                 .productDTO2(secondUser)
                 .build();
-    }
-
-
-    @Transactional
-    public void degradePlayerCharacteristic(Long targetPlayerId,Long roomId, String characteristic, Long artifactId) {
-
-
-
-            // Б. Шлемо всій кімнаті повідомлення, що Олег тепер поранений
-            GameEventDto publicDto = new GameEventDto(
-                    "Гравець " + firstUser.getUsername() + " поранив гравця " + targetPlayer.getUsername(),
-                    targetPlayer.getId(),
-                    "DEBUFF"
-            );
-            // Надсилаємо в загальний топік кімнати (наприклад, /topic/room.123456)
-            messagingTemplate.convertAndSend(
-                    "/topic/room." + targetPlayer.getRoomCode(),
-                    publicDto
-            );
-        }
     }
 }
 
