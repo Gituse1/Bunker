@@ -1,6 +1,6 @@
 package com.example.bunker.controller;
 
-import com.example.bunker.model.ActionTypeArtifact;
+import com.example.bunker.model.Effects;
 import com.example.bunker.model.characteristic.Characteristic;
 import com.example.bunker.service.ArtifactService;
 import lombok.RequiredArgsConstructor;
@@ -28,21 +28,24 @@ public class ArtifactController {
     public ResponseEntity<?> useProtection(@RequestBody Long artifactId,
                                            @RequestBody Long roomId){
 
-        artifactService.underEffect(artifactId,roomId, ActionTypeArtifact.PROTECTION);
+        artifactService.underEffect(artifactId,roomId, Effects.PROTECT);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/espionage")
-    public ResponseEntity<?> useEspionage(){
+    public ResponseEntity<?> useEspionage(@RequestBody Long artifactId,
+                                          @RequestBody Long roomId,
+                                          @RequestBody Long targetPlayerId,
+                                          @RequestBody Characteristic characteristic){
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(artifactService.useEspionage(artifactId,roomId,targetPlayerId,characteristic));
     }
 
     @PutMapping("/stun")
     public ResponseEntity<?> useStun(@RequestBody Long artifactId,
                                      @RequestBody Long roomId){
-        artifactService.underEffect(roomId,artifactId, ActionTypeArtifact.STUN);
-        return ResponseEntity.ok().build();
+
+        return ResponseEntity.ok(artifactService.underEffect(roomId,artifactId, Effects.STUN));
     }
 
     @PutMapping("/stealing")
@@ -54,10 +57,10 @@ public class ArtifactController {
     @PutMapping("/curse")
     private ResponseEntity<?> useCurse(@RequestBody Long artifactId,
                                        @RequestBody Long roomId,
-                                       @RequestBody Long playerId,
+                                       @RequestBody Long targetPlayerId,
                                        @RequestBody Characteristic characteristicToChange){
 
-        artifactService.useCurse(artifactId,roomId,playerId,characteristicToChange);
+        artifactService.useCurse(artifactId,roomId,targetPlayerId,characteristicToChange);
         return ResponseEntity.ok().build();
     }
 }

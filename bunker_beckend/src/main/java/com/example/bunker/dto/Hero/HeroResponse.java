@@ -2,7 +2,7 @@ package com.example.bunker.dto.Hero;
 
 import com.example.bunker.model.Hero;
 import com.example.bunker.model.Profession;
-import com.example.bunker.model.Rase;
+import com.example.bunker.model.Race;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,12 +14,12 @@ public class HeroResponse {
         this.name = hero.getName();
         this.skills = hero.getSkills();
         this.profession = hero.getProfession();
-        this.rase = hero.getRase();
+        this.race = hero.getRace();
         this.hobby = hero.getHobby();
     }
     private String name;
     private Profession profession;
-    private Rase rase;
+    private Race race;
 
     private String hobby;
 

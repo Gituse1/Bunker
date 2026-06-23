@@ -31,9 +31,15 @@ public class SessionService {
         redisTemplate.opsForValue().set(key,dto);
 
     }
+
+    public void saveSession(Long roomId, String userName, ProductDTO dto) {
+        String key = redisTemplate(roomId, userName);
+        redisTemplate.opsForValue().set(key, dto);
+    }
     public ProductDTO getSession(Long roomId,String userName){
         return redisTemplate.opsForValue().get(redisTemplate(roomId,userName));
     }
+
     public List<ProductDTO> getAllSessionByRoomId( Long roomId){
         String keyPattern = "session"+roomId + ":*";
 

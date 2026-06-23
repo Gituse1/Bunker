@@ -2,6 +2,8 @@ package com.example.bunker.model;
 
 public enum Profession {
 
+    DEFAULT,
+
     ROBOT_MECHANIC,
 
     /** Гедоніст (Людина яка не сприймає сучасні технології) */

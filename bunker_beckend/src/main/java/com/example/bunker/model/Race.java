@@ -1,6 +1,7 @@
 package com.example.bunker.model;
 
-public enum Rase {
+public enum Race {
+    DEFAULT,
     MUTANT,
     HUMAN,
     ELF,

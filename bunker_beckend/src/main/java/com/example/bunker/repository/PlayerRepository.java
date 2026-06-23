@@ -43,4 +43,29 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
             WHERE p.id = :playerId
             """)
     Optional<String> findUserNameByPlayerId(@Param("playerId") Long playerId);
+
+    @Query("""
+            Select p From Player p
+            JOIN FETCH p.character
+            JOIN FETCH p.hero
+            JOIN FETCH p.artifactHeroCatalog
+            JOIN FETCH p.firstArtifactRandomCatalog
+            JOIN FETCH p.secondArtifactRandomCatalog
+            JOIN FETCH p.visibilityOfCharacteristic
+            WHERE p.id = :playerId
+            """)
+    Optional<Player> findByIdPlayerAndCharacteristicAndHeroData(@Param("playerId") Long id);
+
+    // Додайте цей метод у свій PlayerRepository для оптимізації
+    @Query("""
+        Select p From Player p
+        JOIN FETCH p.character
+        JOIN FETCH p.hero
+        JOIN FETCH p.artifactHeroCatalog
+        JOIN FETCH p.firstArtifactRandomCatalog
+        JOIN FETCH p.secondArtifactRandomCatalog
+        JOIN FETCH p.visibilityOfCharacteristic
+        WHERE p.id IN :playerIds
+        """)
+    List<Player> findAllByIdsWithRelations(@Param("playerIds") List<Long> playerIds);
 }

@@ -20,7 +20,7 @@ public class VisibilityOfCharacteristic {
     private boolean artefactRandom2IsVisible =false;
 
     @Column(name="state_of_health_visible")
-    private boolean stateOfHealthIsVisible =false;
+    private boolean stateOfHealthIsVisible =true;
 
     @Column(name="grown_visible")
     private boolean grownIsVisible =false;
@@ -37,11 +37,15 @@ public class VisibilityOfCharacteristic {
     @Column(name="secrets_visible")
     private boolean secretsIsVisible =false;
 
-    private boolean professionIsVisible=false;
+    @Column(name = "profession_visible")
+    private boolean professionIsVisible=true;
 
+    @Column(name = "rase_visible")
     private boolean raseIsVisible =true;
 
+    @Column(name = "skill_visible")
     private boolean skillsIsVisible=true;
 
+    @Column(name = "hobby_visible")
     private boolean hobbyIsVisible=false;
 }

@@ -1,5 +1,6 @@
 package com.example.bunker.dto;
 
+import com.example.bunker.model.StatusInGame;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,5 +21,6 @@ public class ProductDTO {
     private Long visibilityId;
     private boolean isProtected;
     private boolean isStunned;
+    private StatusInGame statusInGame =StatusInGame.PREPARATION_FOR_THE_GAME;
 
 }

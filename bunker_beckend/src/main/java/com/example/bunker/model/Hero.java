@@ -21,7 +21,7 @@ public class Hero implements CharacteristicSource {
 
     @Column(unique = true)
     @Enumerated(EnumType.STRING)
-    private Rase rase;
+    private Race race;
 
     private String hobby;
 

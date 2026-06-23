@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 @MessageMapping("/characteristic")
 @RequiredArgsConstructor
 @RestController
-public class ArtifactWebSController {
+public class ArtifactWebController {
 
     
 

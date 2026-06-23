@@ -6,13 +6,12 @@ import com.example.bunker.dto.Player.PlayerCharacteristicUpdateDto;
 import com.example.bunker.dto.Player.PlayerEffectUpdateDto;
 import com.example.bunker.dto.ProductDTO;
 import com.example.bunker.dto.ProductDTORequest;
-import com.example.bunker.dto.User.CharacteristicSourceDto;
+import com.example.bunker.dto.Characteristic.CharacteristicSourceDto;
 import com.example.bunker.model.*;
 import com.example.bunker.model.characteristic.Characteristic;
 import com.example.bunker.model.characteristic.Figure;
 import com.example.bunker.model.characteristic.PhysicalCondition;
 import com.example.bunker.model.characteristic.PsychologicalState;
-import com.example.bunker.projection.CharacteristicSource;
 import com.example.bunker.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.NoResultException;
@@ -24,10 +23,19 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static com.example.bunker.model.characteristic.Characteristic.*;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ArtifactService {
+
+    public static final List<Characteristic> CHARACTERISTICS = List.of(
+            PROFESSION,
+            RASE,
+            HOBBY
+    );
+
     private final AuthService authService;
     private final SessionService sessionService;
 
@@ -37,6 +45,7 @@ public class ArtifactService {
     private final VisibilityOfCharacteristicRepository visibilityOfCharacteristicRepository;
     private final ArtifactHeroCatalogRepository artifactHeroCatalogRepository;
     private final ArtifactRandomCatalogRepository artifactRandomCatalogRepository;
+    private final HeroRepository heroRepository;
 
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -129,47 +138,34 @@ public class ArtifactService {
     }
 
     @Transactional
-    public void underEffect(Long roomId, Long artifactId, ActionTypeArtifact actionTypeArtifact) {
+    public PlayerEffectUpdateDto underEffect(Long roomId, Long artifactId, Effects effects) {
 
         String userName = authService.getCurrentUserName();
         ProductDTO firstUser = sessionService.getSession(roomId, userName);
-        String nameOfEffect = "";
         int durationOfEffect = 1;
+
         if (firstUser == null) {
             throw new IllegalArgumentException("Data in Redis was broken or room Id is not correct");
         }
+
         if (firstUser.getArtifactRand1Id().equals(artifactId) || firstUser.getArtifactRand2Id().equals(artifactId)) {
 
-            if (actionTypeArtifact.equals(ActionTypeArtifact.STUN)) {
-                if (!firstUser.isStunned()) { //false by default
-                    nameOfEffect = EffectsName.Stun.toString();
-                    sessionService.updateSession(roomId, userName, dto ->
-                        dto.setStunned(true));
-                }
-            }
+            if (!effects.isUnderEffect(firstUser)) {
+                ProductDTO newUser = effects.setEffect(firstUser);
 
-            if (actionTypeArtifact.equals(ActionTypeArtifact.PROTECTION)) {
-                if (!firstUser.isProtected()) { //false by default
-                    nameOfEffect = EffectsName.Protect.toString();
-                    sessionService.updateSession(roomId, userName, dto ->
-                        dto.setProtected(true));
-                }
+                sessionService.saveSession(roomId, userName, newUser);
+            } else {
+                throw new NoResultException("There is nothing under the effect to under");
             }
-
 
         }
-        PlayerEffectUpdateDto updateDto = new PlayerEffectUpdateDto(
-                nameOfEffect,
+
+        return new PlayerEffectUpdateDto(
+                effects.name(),
                 durationOfEffect,
                 true
         );
 
-        messagingTemplate.convertAndSendToUser(
-                userName,
-                "/queue/my-status"
-                , updateDto
-
-        );
     }
 
     @Transactional
@@ -245,16 +241,15 @@ public class ArtifactService {
         }
     }
 
-    //При поточному написанні програми буде дуже багато Case і ще більше повторюваного коду.
     @Transactional
-    public void useEspionage(Long artifactId, Long roomId, Long targetPlayerId, Characteristic characteristic) {
+    public CharacteristicShowCharacteristicRequest useEspionage(Long artifactId, Long roomId, Long targetPlayerId, Characteristic characteristic) {
 
         String targetUserName = playerRepository.findUserNameByPlayerId(targetPlayerId)
                 .orElseThrow(() -> new EntityNotFoundException("User name is not found"));
 
         String firstUserName = authService.getCurrentUserName();
 
-        ProductDTO firstUser = sessionService.getSession(roomId,firstUserName);
+        ProductDTO firstUser = sessionService.getSession(roomId, firstUserName);
 
         if (firstUser.getArtifactRand1Id().equals(artifactId) || firstUser.getArtifactRand2Id().equals(artifactId)) {
 
@@ -263,24 +258,42 @@ public class ArtifactService {
             VisibilityOfCharacteristic visibility = visibilityOfCharacteristicRepository.findById(turgetProductDto.getVisibilityId())
                     .orElseThrow(() -> new EntityNotFoundException("Visibility is not found"));
 
-            CharacteristicSourceDto characteristicSourceDto = getCurrentTable(turgetProductDto,firstUser, characteristic);
+            CharacteristicSourceDto characteristicSourceDto = getCurrentTable(turgetProductDto, firstUser, characteristic);
 
-            if(!characteristic.isVisible(visibility)){
+            if (!characteristic.isVisible(visibility)) {
 
-                String nameOf =characteristic.extractValue(characteristicSourceDto.characteristicSource1());
+                String nameOf = characteristic.extractValue(characteristicSourceDto.getUserCharacteristicSource());
 
-                CharacteristicShowCharacteristicRequest characteristicRequest = CharacteristicShowCharacteristicRequest.builder()
+                return CharacteristicShowCharacteristicRequest.builder()
                         .nameCharacteristic(characteristic.name())
                         .valueCharacteristic(nameOf)
                         .build();
-
-                        messagingTemplate.convertAndSendToUser(
-                        firstUserName,
-                        "/queue/my-status",
-                        characteristicRequest
-                );
+            } else {
+                throw new IllegalArgumentException("The characteristic is already visible");
             }
         }
+        return null;
+    }
+
+    @Transactional // Відсутнє збереження даних де небуть
+    public void useStealing(Long roomId, Long playerId, Long targetPlayerId, Characteristic characteristic) {
+        String firstUserName = authService.getCurrentUserName();
+
+        String targetUserName = playerRepository.findUserNameByPlayerId(targetPlayerId)
+                .orElseThrow(() -> new EntityNotFoundException("User name is not found"));
+
+        if(CHARACTERISTICS.stream().anyMatch(o -> o.name().equals(characteristic.name()))){
+            throw new  IllegalArgumentException("This characteristic can`t stale");
+        }
+        ProductDTO firstUser = sessionService.getSession(roomId, firstUserName);
+        ProductDTO targetUser = sessionService.getSession(roomId, targetUserName);
+        CharacteristicSourceDto sourceDto = getCurrentTable(targetUser, firstUser, characteristic);
+        characteristic.swapCharacteristic(sourceDto.getUserCharacteristicSource(),sourceDto.getTargetCharacteristicSource());
+
+
+
+
+
     }
 
     private ProductDTORequest auditData(Long roomId, Long playerId) {
@@ -302,7 +315,7 @@ public class ArtifactService {
             if (productDTOList.isEmpty()) {
                 throw new IllegalArgumentException("Invalid player id because there is no player in Redis. Player id: " + playerId);
             }
-            secondUser = productDTOList.get(0);
+            secondUser = productDTOList.getFirst();
         }
         return ProductDTORequest.builder()
                 .productDTO1(firstUser)
@@ -310,7 +323,7 @@ public class ArtifactService {
                 .build();
     }
 
-    private CharacteristicSourceDto getCurrentTable(ProductDTO turgetProductDTO,ProductDTO userProductDTO,Characteristic characteristic) {
+    private CharacteristicSourceDto getCurrentTable(ProductDTO turgetProductDTO, ProductDTO userProductDTO, Characteristic characteristic) {
 
         switch (characteristic) {
             case INVENTORY1 -> {
@@ -321,41 +334,55 @@ public class ArtifactService {
                         .orElseThrow(() -> new EntityNotFoundException("In get Current Table hero artifact not found for firstUser"));
 
                 return CharacteristicSourceDto.builder()
-                        .characteristicSource1(userSource)
-                        .characteristicSource2(targetSource)
+                        .userCharacteristicSource(userSource)
+                        .targetCharacteristicSource(targetSource)
                         .build();
             }
             case INVENTORY2 -> {
                 ArtifactRandomCatalog targetSource = artifactRandomCatalogRepository.findById(turgetProductDTO.getArtifactRand1Id())
-                        .orElseThrow(()-> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for targetUser"));
+                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for targetUser"));
                 ArtifactRandomCatalog userSource = artifactRandomCatalogRepository.findById(userProductDTO.getArtifactRand1Id())
-                        .orElseThrow(()-> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for firstUser"));
+                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for firstUser"));
 
                 return CharacteristicSourceDto.builder()
-                        .characteristicSource1(userSource)
-                        .characteristicSource2(targetSource)
+                        .userCharacteristicSource(userSource)
+                        .targetCharacteristicSource(targetSource)
                         .build();
             }
             case INVENTORY3 -> {
                 ArtifactRandomCatalog targetSource = artifactRandomCatalogRepository.findById(turgetProductDTO.getArtifactRand2Id())
-                    .orElseThrow(()-> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for targetUser"));
+                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for targetUser"));
                 ArtifactRandomCatalog userSource = artifactRandomCatalogRepository.findById(userProductDTO.getArtifactRand2Id())
-                        .orElseThrow(()-> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for firstUser"));
+                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for firstUser"));
+
                 return CharacteristicSourceDto.builder()
-                        .characteristicSource1(userSource)
-                        .characteristicSource2(targetSource)
+                        .userCharacteristicSource(userSource)
+                        .targetCharacteristicSource(targetSource)
                         .build();
             }
-            default -> {
+            case PROFESSION, RASE, HOBBY -> {
+                Hero targetSource = heroRepository.findById(turgetProductDTO.getHeroId())
+                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for targetUser"));
+                Hero userSource = heroRepository.findById(userProductDTO.getHeroId())
+                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for firstUser"));
+
+                return CharacteristicSourceDto.builder()
+                        .userCharacteristicSource(userSource)
+                        .targetCharacteristicSource(targetSource)
+                        .build();
+            }
+            case STATE_OF_HEALTH,FIGURE,PHYSICAL_CONDITION,PSYCHOLOGICAL_STATE,SECRET,GROWN-> {
                 CharacteristicPlayer targetSource = characteristicRepository.findById(turgetProductDTO.getCharacterId())
-                        .orElseThrow(()-> new EntityNotFoundException(" In get Current Table characteristic not found for targetUser"));
+                        .orElseThrow(() -> new EntityNotFoundException(" In get Current Table characteristic not found for targetUser"));
                 CharacteristicPlayer userSource = characteristicRepository.findById(userProductDTO.getCharacterId())
-                        .orElseThrow(()-> new EntityNotFoundException(" In get Current Table characteristic not found for firstUser"));
+                        .orElseThrow(() -> new EntityNotFoundException(" In get Current Table characteristic not found for firstUser"));
+
                 return CharacteristicSourceDto.builder()
-                        .characteristicSource1(userSource)
-                        .characteristicSource2(targetSource)
+                        .userCharacteristicSource(userSource)
+                        .targetCharacteristicSource(targetSource)
                         .build();
             }
+            default -> throw new IllegalArgumentException("Invalid characteristic because " + characteristic);
         }
     }
 }
