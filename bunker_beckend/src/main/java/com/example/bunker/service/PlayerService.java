@@ -1,5 +1,6 @@
 package com.example.bunker.service;
 
+import com.example.bunker.dto.Hero.HeroResponse;
 import com.example.bunker.dto.ProductDTO;
 import com.example.bunker.model.*;
 import com.example.bunker.repository.*;
@@ -27,7 +28,7 @@ public class PlayerService {
     private final VisibilityOfCharacteristicRepository  visibilityOfCharacteristicRepository;
     private final ArtifactRandomCatalogRepository artifactRandomCatalogRepository;
     private final ArtifactHeroCatalogRepository artifactHeroCatalogRepository;
-    private final CharacteristicRepository  characteristicRepository;
+    private final HeroRepository heroRepository;
     private final PlayerRepository playerRepository;
     private final UserRepository userRepository;
 
@@ -58,6 +59,11 @@ public class PlayerService {
 
 
     public List<ArtifactRandomCatalog> findRandomArtifactCatalog(Long roomId){
+
+        String userName = authService.getCurrentUserName();
+
+        log.info("Finding random artifact catalog by user name:{}",userName);
+
         List<ProductDTO> sessions = sessionService.getAllSessionByRoomId(roomId);
         long numb;
         long numbCycles=0;//Лічильник ітерацій щоб при недостачі даних запобігти безкінечному циклу
@@ -79,9 +85,13 @@ public class PlayerService {
                             )
                     )
                     .count();
+            if(numbCycles>MAX_NUMBER_OF_CYCLES/2){
+                log.warn("In findRandomArtifactCatalog is so many cycles");
+            }
         }while (numb == 0);
         return  artifactRandomCatalogs;
     }
+
     public ArtifactHeroCatalog addHeroArtifacts(Long roomId){
         String userName = authService.getCurrentUserName();
 
@@ -106,6 +116,9 @@ public class PlayerService {
 
             if(numbCycles>MAX_NUMBER_OF_CYCLES){
                 throw new RuntimeException("Maximum number of cycles reached because most of all HERO ARTIFACTS have been busy");
+            }
+            if(numbCycles>MAX_NUMBER_OF_CYCLES/2){
+                log.warn("In addHeroArtifacts is so many cycles");
             }
 
         }while (numb > 0);
@@ -161,6 +174,40 @@ public class PlayerService {
 
        playerRepository.save(player);
 
+    }
+
+    public HeroResponse addHero(Long roomId){
+
+        String userName = authService.getCurrentUserName();
+
+        log.info("Creating Hero  by userName:{}",userName);
+
+        List<ProductDTO>  sessions = sessionService.getAllSessionByRoomId(roomId);
+        long numb;
+        Hero realHero;
+        int numbCycles=0;
+        do{
+            numbCycles++;
+            Hero hero = heroRepository.findHero().orElseThrow(()-> new EntityNotFoundException("hero not added to database or request had bug"));
+
+             numb =sessions.stream()
+                    .filter(o -> o.getHeroId().equals(hero.getId()))
+                    .count();
+             realHero=hero;
+             if(numbCycles>MAX_NUMBER_OF_CYCLES/2){
+                 log.warn("In addHero is so many cycles");
+             }
+             if(numbCycles>MAX_NUMBER_OF_CYCLES){
+                 throw new RuntimeException("Maximum number of cycles reached because most of all HERO have been busy");
+             }
+        }while (numb>0);
+
+        Hero finalRealHero= heroRepository.save(realHero);
+
+        sessionService.updateSession(roomId,userName, dto->{
+            dto.setHeroId(finalRealHero.getId());
+        });
+        return new HeroResponse(finalRealHero);
     }
 
     private Player buildNewPlayer(User user,Long roomId) {

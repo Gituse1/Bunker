@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductDTO {
-    private Long roomId;
     private Long heroId;
     private Long playerId;
     private Long characterId;

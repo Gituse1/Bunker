@@ -1,22 +1,19 @@
 package com.example.bunker.service;
 
+import com.example.bunker.dto.Characteristic.CharacteristicShowCharacteristicRequest;
 import com.example.bunker.dto.Player.GameEventDto;
 import com.example.bunker.dto.Player.PlayerCharacteristicUpdateDto;
 import com.example.bunker.dto.Player.PlayerEffectUpdateDto;
 import com.example.bunker.dto.ProductDTO;
 import com.example.bunker.dto.ProductDTORequest;
-import com.example.bunker.model.ActionTypeArtifact;
-import com.example.bunker.model.CharacteristicPlayer;
-import com.example.bunker.model.EffectsName;
-import com.example.bunker.model.VisibilityOfCharacteristic;
+import com.example.bunker.dto.User.CharacteristicSourceDto;
+import com.example.bunker.model.*;
 import com.example.bunker.model.characteristic.Characteristic;
 import com.example.bunker.model.characteristic.Figure;
 import com.example.bunker.model.characteristic.PhysicalCondition;
 import com.example.bunker.model.characteristic.PsychologicalState;
-import com.example.bunker.repository.CharacteristicRepository;
-import com.example.bunker.repository.PlayerRepository;
-import com.example.bunker.repository.RoomRepository;
-import com.example.bunker.repository.VisibilityOfCharacteristicRepository;
+import com.example.bunker.projection.CharacteristicSource;
+import com.example.bunker.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.NoResultException;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +35,8 @@ public class ArtifactService {
     private final PlayerRepository playerRepository;
     private final RoomRepository roomRepository;
     private final VisibilityOfCharacteristicRepository visibilityOfCharacteristicRepository;
+    private final ArtifactHeroCatalogRepository artifactHeroCatalogRepository;
+    private final ArtifactRandomCatalogRepository artifactRandomCatalogRepository;
 
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -144,18 +143,16 @@ public class ArtifactService {
             if (actionTypeArtifact.equals(ActionTypeArtifact.STUN)) {
                 if (!firstUser.isStunned()) { //false by default
                     nameOfEffect = EffectsName.Stun.toString();
-                    sessionService.updateSession(roomId, userName, dto -> {
-                        dto.setStunned(true);
-                    });
+                    sessionService.updateSession(roomId, userName, dto ->
+                        dto.setStunned(true));
                 }
             }
 
             if (actionTypeArtifact.equals(ActionTypeArtifact.PROTECTION)) {
                 if (!firstUser.isProtected()) { //false by default
                     nameOfEffect = EffectsName.Protect.toString();
-                    sessionService.updateSession(roomId, userName, dto -> {
-                        dto.setProtected(true);
-                    });
+                    sessionService.updateSession(roomId, userName, dto ->
+                        dto.setProtected(true));
                 }
             }
 
@@ -251,55 +248,38 @@ public class ArtifactService {
     //При поточному написанні програми буде дуже багато Case і ще більше повторюваного коду.
     @Transactional
     public void useEspionage(Long artifactId, Long roomId, Long targetPlayerId, Characteristic characteristic) {
+
         String targetUserName = playerRepository.findUserNameByPlayerId(targetPlayerId)
                 .orElseThrow(() -> new EntityNotFoundException("User name is not found"));
 
-        String currentUserName = authService.getCurrentUserName();
+        String firstUserName = authService.getCurrentUserName();
 
-        ProductDTO turgetProductDTO = sessionService.getSession(roomId, targetUserName);
+        ProductDTO firstUser = sessionService.getSession(roomId,firstUserName);
 
-        VisibilityOfCharacteristic visibility = visibilityOfCharacteristicRepository.findById(turgetProductDTO.getVisibilityId())
-                .orElseThrow(() -> new EntityNotFoundException("Visibility is not found"));
+        if (firstUser.getArtifactRand1Id().equals(artifactId) || firstUser.getArtifactRand2Id().equals(artifactId)) {
 
-        CharacteristicPlayer characteristicPlayer = characteristicRepository.findById(turgetProductDTO.getCharacterId())
-                .orElseThrow(() -> new EntityNotFoundException("Characteristic is not found"));
+            ProductDTO turgetProductDto = sessionService.getSession(roomId, targetUserName);
 
+            VisibilityOfCharacteristic visibility = visibilityOfCharacteristicRepository.findById(turgetProductDto.getVisibilityId())
+                    .orElseThrow(() -> new EntityNotFoundException("Visibility is not found"));
 
-        switch (characteristic) {
+            CharacteristicSourceDto characteristicSourceDto = getCurrentTable(turgetProductDto,firstUser, characteristic);
 
-            case FIGURE -> {
-                if (!visibility.isFigureIsVisible()) {
+            if(!characteristic.isVisible(visibility)){
 
-                    PlayerCharacteristicUpdateDto playerCharacteristicUpdateDto = new PlayerCharacteristicUpdateDto(
-                            characteristic,
-                            characteristicPlayer.getFigure().toString()
-                    );
-                    messagingTemplate.convertAndSendToUser(
-                            currentUserName,
-                            "/queue/my-status",
-                            playerCharacteristicUpdateDto
-                    );
-                }
-                break;
+                String nameOf =characteristic.extractValue(characteristicSourceDto.characteristicSource1());
+
+                CharacteristicShowCharacteristicRequest characteristicRequest = CharacteristicShowCharacteristicRequest.builder()
+                        .nameCharacteristic(characteristic.name())
+                        .valueCharacteristic(nameOf)
+                        .build();
+
+                        messagingTemplate.convertAndSendToUser(
+                        firstUserName,
+                        "/queue/my-status",
+                        characteristicRequest
+                );
             }
-            case PSYCHOLOGICAL_STATE -> {
-                if (!visibility.isPsyhologicalStateIsVisible()) {
-
-                    PlayerCharacteristicUpdateDto playerCharacteristicUpdateDto = new PlayerCharacteristicUpdateDto(
-                            characteristic,
-                            characteristicPlayer.getPsyhologicalState().toString()
-                    );
-                    messagingTemplate.convertAndSendToUser(
-                            currentUserName,
-                            "/queue/my-status",
-                            playerCharacteristicUpdateDto
-                    );
-                }
-                break;
-            }
-
-
-
         }
     }
 
@@ -328,6 +308,55 @@ public class ArtifactService {
                 .productDTO1(firstUser)
                 .productDTO2(secondUser)
                 .build();
+    }
+
+    private CharacteristicSourceDto getCurrentTable(ProductDTO turgetProductDTO,ProductDTO userProductDTO,Characteristic characteristic) {
+
+        switch (characteristic) {
+            case INVENTORY1 -> {
+
+                ArtifactHeroCatalog targetSource = artifactHeroCatalogRepository.findById(turgetProductDTO.getArtifactHeroId())
+                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table hero artifact not found for targetUser"));
+                ArtifactHeroCatalog userSource = artifactHeroCatalogRepository.findById(userProductDTO.getArtifactHeroId())
+                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table hero artifact not found for firstUser"));
+
+                return CharacteristicSourceDto.builder()
+                        .characteristicSource1(userSource)
+                        .characteristicSource2(targetSource)
+                        .build();
+            }
+            case INVENTORY2 -> {
+                ArtifactRandomCatalog targetSource = artifactRandomCatalogRepository.findById(turgetProductDTO.getArtifactRand1Id())
+                        .orElseThrow(()-> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for targetUser"));
+                ArtifactRandomCatalog userSource = artifactRandomCatalogRepository.findById(userProductDTO.getArtifactRand1Id())
+                        .orElseThrow(()-> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for firstUser"));
+
+                return CharacteristicSourceDto.builder()
+                        .characteristicSource1(userSource)
+                        .characteristicSource2(targetSource)
+                        .build();
+            }
+            case INVENTORY3 -> {
+                ArtifactRandomCatalog targetSource = artifactRandomCatalogRepository.findById(turgetProductDTO.getArtifactRand2Id())
+                    .orElseThrow(()-> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for targetUser"));
+                ArtifactRandomCatalog userSource = artifactRandomCatalogRepository.findById(userProductDTO.getArtifactRand2Id())
+                        .orElseThrow(()-> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for firstUser"));
+                return CharacteristicSourceDto.builder()
+                        .characteristicSource1(userSource)
+                        .characteristicSource2(targetSource)
+                        .build();
+            }
+            default -> {
+                CharacteristicPlayer targetSource = characteristicRepository.findById(turgetProductDTO.getCharacterId())
+                        .orElseThrow(()-> new EntityNotFoundException(" In get Current Table characteristic not found for targetUser"));
+                CharacteristicPlayer userSource = characteristicRepository.findById(userProductDTO.getCharacterId())
+                        .orElseThrow(()-> new EntityNotFoundException(" In get Current Table characteristic not found for firstUser"));
+                return CharacteristicSourceDto.builder()
+                        .characteristicSource1(userSource)
+                        .characteristicSource2(targetSource)
+                        .build();
+            }
+        }
     }
 }
 

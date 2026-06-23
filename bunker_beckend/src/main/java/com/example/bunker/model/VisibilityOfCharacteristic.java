@@ -36,4 +36,12 @@ public class VisibilityOfCharacteristic {
 
     @Column(name="secrets_visible")
     private boolean secretsIsVisible =false;
+
+    private boolean professionIsVisible=false;
+
+    private boolean raseIsVisible =true;
+
+    private boolean skillsIsVisible=true;
+
+    private boolean hobbyIsVisible=false;
 }

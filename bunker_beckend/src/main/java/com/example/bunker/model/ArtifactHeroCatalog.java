@@ -1,5 +1,6 @@
 package com.example.bunker.model;
 
+import com.example.bunker.projection.CharacteristicSource;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "artifact_hero_catalog")
-public class ArtifactHeroCatalog {
+public class ArtifactHeroCatalog implements CharacteristicSource {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

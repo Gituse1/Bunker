@@ -103,6 +103,7 @@ public class RoomPlayerService {
        roomPlayer.setJoined(false);
 
        roomPlayerRepository.save(roomPlayer);
+        playerRepository.deleteById(roomPlayer.getPlayer().getId());
     }
 
     @Transactional
@@ -128,7 +129,6 @@ public class RoomPlayerService {
         Player player = roomPlayer.getPlayer();
         return dto -> {
             dto.setPlayerId(player.getId());
-            dto.setRoomId(roomPlayer.getRoom().getId());
 
             if(player.getHero()!=null){
                 dto.setHeroId(player.getHero().getId());

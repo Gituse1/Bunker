@@ -7,6 +7,7 @@ import com.example.bunker.repository.RoomRepository;
 import com.example.bunker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ public class RoomService {
     private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 
+    @Transactional
     public RoomResponse createRoom() {
 
         Room room = new Room();
@@ -50,7 +52,7 @@ public class RoomService {
                 .build();
     }
 
-
+    @Transactional
     public List<AllRoomsResponse> getAllRooms() {
 
         String userName =authService.getCurrentUserName();
@@ -73,7 +75,7 @@ public class RoomService {
     }
 
 
-
+    @Transactional
     public String generateToken() {
         String token;
         boolean isTokenUnique;

@@ -13,18 +13,24 @@ public class PlayerController {
 
     private  final PlayerService playerService;
 
-    //Описати поступове додавання характеристик до вже існуючого героя.
+    @GetMapping("/hero")
+    public ResponseEntity<?> getHero(@RequestParam Long roomId){
 
-    @GetMapping("/artifacts")
-    public ResponseEntity<?> getArtifacts(@RequestParam Long roomId){
-
-        PlayerArtifactResponse playerArtifactResponse = PlayerArtifactResponse.builder()
-                .artifactRandomCatalogs(playerService.findRandomArtifactCatalog(roomId))
-                .artifactHeroCatalog(playerService.addHeroArtifacts(roomId))
-                .build();
-
-        return ResponseEntity.ok(playerArtifactResponse);
+        return ResponseEntity.ok(playerService.addHero(roomId));
     }
+
+    @GetMapping("/randomArtifacts")
+    public ResponseEntity<?> getRandomArtifacts(@RequestParam Long roomId){
+
+        return ResponseEntity.ok(playerService.findRandomArtifactCatalog(roomId));
+    }
+
+    @GetMapping("/heroArtifacts")
+    public ResponseEntity<?> getHeroArtifacts(@RequestParam Long roomId){
+
+        return  ResponseEntity.ok(playerService.addHeroArtifacts(roomId));
+    }
+
 
 
     @PostMapping("/artifacts")

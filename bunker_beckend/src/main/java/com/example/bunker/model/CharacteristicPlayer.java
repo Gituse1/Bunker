@@ -1,6 +1,7 @@
 package com.example.bunker.model;
 
 import com.example.bunker.model.characteristic.*;
+import com.example.bunker.projection.CharacteristicSource;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,12 +14,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @Table(name ="characteristic")
-public class CharacteristicPlayer {
+public class CharacteristicPlayer implements CharacteristicSource {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-    private double grown;
+    private Long id;
+    private Double grown;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "state_of_health")
@@ -36,7 +37,6 @@ public class CharacteristicPlayer {
     private PsychologicalState psyhologicalState;
 
     @Enumerated(EnumType.STRING)
-
     private Secret secret;
 
 }

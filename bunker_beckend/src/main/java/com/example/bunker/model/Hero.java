@@ -1,5 +1,6 @@
 package com.example.bunker.model;
 
+import com.example.bunker.projection.CharacteristicSource;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,7 +9,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Hero {
+public class Hero implements CharacteristicSource {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
