@@ -122,6 +122,10 @@ public enum Characteristic {
                 .targetCharacteristicSource(targetUserSource)
                 .build();
     }
+    public ProductDTO applyToProduct(ProductDTO dto, Long id){
+        productSetter.accept(dto, id);
+        return dto;
+    }
 
 
 

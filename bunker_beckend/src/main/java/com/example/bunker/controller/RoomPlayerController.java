@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/app/roomPlayer")
+@RequestMapping("/api/roomPlayer")
 public class RoomPlayerController {
 
     private final RoomPlayerService roomPlayerService;
@@ -18,9 +18,29 @@ public class RoomPlayerController {
     }
 
 
-    @PutMapping("/left_game")
-    private ResponseEntity<?> leftGame(@ RequestParam Long roomId) {
+    @PutMapping("/left_game/{roomId}")
+    private ResponseEntity<?> leftGame(@PathVariable Long roomId) {
         roomPlayerService.leaveGame(roomId);
         return ResponseEntity.ok().build();
     }
+    @PutMapping("/expulsion/{roomId}")
+    private ResponseEntity<?> expulsion(@PathVariable Long roomId , @RequestBody String targetUserName) {
+        roomPlayerService.playerExpulsion(roomId,targetUserName);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/results/{roomId}")
+    private ResponseEntity<?> votingResults(@PathVariable Long roomId){
+        roomPlayerService.votingResults(roomId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("next_move/{roomId}")
+    private ResponseEntity<?> nextMove(@PathVariable Long roomId) {
+
+        roomPlayerService.nextMove(roomId);
+        return ResponseEntity.ok().build();
+    }
+
+
 }

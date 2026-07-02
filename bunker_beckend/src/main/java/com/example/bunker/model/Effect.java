@@ -21,4 +21,10 @@ public class Effect {
 
     @Column(name = "is_stunned")
     private boolean isStunned =false;
+
+    @Column(name = "time_of_protection")
+    private Integer timeOfProtection =0;
+
+    @Column(name = "time_of_stun")
+    private Integer timeOfStun =0;
 }

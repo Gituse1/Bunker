@@ -1,8 +1,8 @@
 package com.example.bunker.service;
 
+import com.example.bunker.dto.Characteristic.CharacteristicArtifactStealing;
 import com.example.bunker.dto.Characteristic.CharacteristicShowCharacteristicRequest;
 import com.example.bunker.dto.Player.GameEventDto;
-import com.example.bunker.dto.Player.PlayerCharacteristicUpdateDto;
 import com.example.bunker.dto.Player.PlayerEffectUpdateDto;
 import com.example.bunker.dto.ProductDTO;
 import com.example.bunker.dto.ProductDTORequest;
@@ -46,6 +46,7 @@ public class ArtifactService {
     private final ArtifactHeroCatalogRepository artifactHeroCatalogRepository;
     private final ArtifactRandomCatalogRepository artifactRandomCatalogRepository;
     private final HeroRepository heroRepository;
+    private final EffectRepository effectRepository;
 
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -55,6 +56,8 @@ public class ArtifactService {
         ProductDTORequest productDTORequest = auditData(roomId, targetPlayerId);
         ProductDTO firstUser = productDTORequest.getProductDTO1();
         ProductDTO secondUser = productDTORequest.getProductDTO2();
+
+        String newCharacteristic = "";
         if (firstUser.getArtifactRand1Id().equals(artifactId) || firstUser.getArtifactRand2Id().equals(artifactId)) {
             CharacteristicPlayer characteristicPlayer = characteristicRepository.findById(secondUser.getCharacterId())
                     .orElseThrow(() -> new EntityNotFoundException("In Redis characteristicId is not correct"));
@@ -63,12 +66,15 @@ public class ArtifactService {
                     switch (characteristicPlayer.getPhysicalCondition()) {
                         case WEAK:
                             characteristicPlayer.setPhysicalCondition(PhysicalCondition.WOUNDED);
+                            newCharacteristic = characteristicPlayer.getPhysicalCondition().toString();
                             break;
                         case WOUNDED:
                             characteristicPlayer.setPhysicalCondition(PhysicalCondition.DISABILITY);
+                            newCharacteristic = characteristicPlayer.getPhysicalCondition().toString();
                             break;
                         case DISABILITY:
                             characteristicPlayer.setPhysicalCondition(PhysicalCondition.STRONG);
+                            newCharacteristic = characteristicPlayer.getPhysicalCondition().toString();
                             break;
                         case STRONG:
                             throw new NoResultException("There is nothing stronger than strong");
@@ -83,9 +89,11 @@ public class ArtifactService {
                             throw new NoResultException("There is nothing happier than happy");
                         case STABLE:
                             characteristicPlayer.setPsyhologicalState(PsychologicalState.HAPPY);
+                            newCharacteristic = characteristicPlayer.getPsyhologicalState().toString();
                             break;
                         case AGGRESSIVE, UNSTABLE, PARANOID, BIPOLAR:
                             characteristicPlayer.setPsyhologicalState(PsychologicalState.STABLE);
+                            newCharacteristic = characteristicPlayer.getPsyhologicalState().toString();
                             break;
                         default:
                             throw new NumberFormatException("Invalid psychological characteristic");
@@ -95,43 +103,37 @@ public class ArtifactService {
                     switch (characteristicPlayer.getFigure()) {
                         case SLIM:
                             characteristicPlayer.setFigure(Figure.ATHLETIC);
+                            newCharacteristic = characteristicPlayer.getFigure().toString();
                             break;
                         case THIN:
                             characteristicPlayer.setFigure(Figure.STRONG_BUILD);
+                            newCharacteristic = characteristicPlayer.getFigure().toString();
                             break;
                         case STRONG_BUILD, ATHLETIC:
                             characteristicPlayer.setFigure(Figure.MUTATED);
+                            newCharacteristic = characteristicPlayer.getFigure().toString();
                             break;
                         default:
                             throw new NumberFormatException("Invalid figure characteristic");
                     }
                 }
             }
-            characteristicPlayer = characteristicRepository.save(characteristicPlayer);
+            characteristicRepository.save(characteristicPlayer);
 
             //Надсилання повідомлення
-            PlayerCharacteristicUpdateDto updateDto = new PlayerCharacteristicUpdateDto(
-                    characteristic,
-                    characteristicPlayer.getFigure().toString()
-            );
 
             String targetUserName = playerRepository.findUserNameByPlayerId(targetPlayerId)
                     .orElseThrow(() -> new EntityNotFoundException("User name is not found"));
 
-            messagingTemplate.convertAndSendToUser(
-                    targetUserName,
-                    "/queue/my-status"
-                    , updateDto
-            );
             GameEventDto gameEventDto = new GameEventDto(
                     "Гравець " + authService.getCurrentUserName() + " Підвищив характеристики гравця " + targetUserName,
                     targetUserName,
-                    ActionTypeArtifact.CURSE,
+                    ActionTypeArtifact.PURIFICATION,
                     characteristic,
-                    characteristicPlayer.getFigure().toString()
+                    newCharacteristic
             );
             messagingTemplate.convertAndSend(
-                    "/topic/room." + roomRepository.findCodeToConnectByRoomId(roomId),
+                    "/topic/purification." + roomRepository.findCodeToConnectById(roomId),
                     gameEventDto
             );
         }
@@ -151,8 +153,11 @@ public class ArtifactService {
         if (firstUser.getArtifactRand1Id().equals(artifactId) || firstUser.getArtifactRand2Id().equals(artifactId)) {
 
             if (!effects.isUnderEffect(firstUser)) {
-                ProductDTO newUser = effects.setEffect(firstUser);
+                ProductDTO newUser = effects.setEffectToDto(firstUser);
+                Effect effect =effects.setEffectToEffects( effectRepository.findById(firstUser.getEffectId()).orElseThrow(
+                        ()->new EntityNotFoundException("Effect not found in function underEffect")));
 
+                effectRepository.save(effect);
                 sessionService.saveSession(roomId, userName, newUser);
             } else {
                 throw new NoResultException("There is nothing under the effect to under");
@@ -213,19 +218,10 @@ public class ArtifactService {
             characteristicPlayer = characteristicRepository.save(characteristicPlayer);
 
             //Надсилання повідомлення
-            PlayerCharacteristicUpdateDto updateDto = new PlayerCharacteristicUpdateDto(
-                    characteristic,
-                    characteristicPlayer.getFigure().toString()
-            );
 
             String targetUserName = playerRepository.findUserNameByPlayerId(targetPlayerId)
                     .orElseThrow(() -> new EntityNotFoundException("User name is not found"));
 
-            messagingTemplate.convertAndSendToUser(
-                    targetUserName,
-                    "/queue/my-status"
-                    , updateDto
-            );
             GameEventDto gameEventDto = new GameEventDto(
                     "Гравець " + authService.getCurrentUserName() + " Понизив характеристики гравця " + targetUserName,
                     targetUserName,
@@ -234,7 +230,7 @@ public class ArtifactService {
                     characteristicPlayer.getFigure().toString()
             );
             messagingTemplate.convertAndSend(
-                    "/topic/room." + roomRepository.findCodeToConnectByRoomId(roomId),
+                    "/topic/room." + roomRepository.findCodeToConnectById(roomId),
                     gameEventDto
             );
 
@@ -275,8 +271,8 @@ public class ArtifactService {
         return null;
     }
 
-    @Transactional // Відсутнє збереження даних де небуть
-    public void useStealing(Long roomId, Long playerId, Long targetPlayerId, Characteristic characteristic) {
+    @Transactional
+    public CharacteristicArtifactStealing useStealing(Long roomId, Long playerId, Long targetPlayerId, Characteristic characteristic) {
         String firstUserName = authService.getCurrentUserName();
 
         String targetUserName = playerRepository.findUserNameByPlayerId(targetPlayerId)
@@ -288,7 +284,27 @@ public class ArtifactService {
         ProductDTO firstUser = sessionService.getSession(roomId, firstUserName);
         ProductDTO targetUser = sessionService.getSession(roomId, targetUserName);
         CharacteristicSourceDto sourceDto = getCurrentTable(targetUser, firstUser, characteristic);
-        characteristic.swapCharacteristic(sourceDto.getUserCharacteristicSource(),sourceDto.getTargetCharacteristicSource());
+        CharacteristicSourceDto sourceDto1 =characteristic.swapCharacteristic(sourceDto.getUserCharacteristicSource(),sourceDto.getTargetCharacteristicSource());
+
+        Long firstUserNewId = sourceDto.getUserCharacteristicSource().getId();
+        Long targetUserNewId = sourceDto.getTargetCharacteristicSource().getId();
+
+        ProductDTO newFirstUser =characteristic.applyToProduct(firstUser,targetUserNewId);
+        ProductDTO newTargetUser=characteristic.applyToProduct(targetUser,firstUserNewId);
+
+        sessionService.saveSession(roomId,firstUserName,newFirstUser);
+        sessionService.saveSession(roomId,targetUserName,newTargetUser);
+
+        messagingTemplate.convertAndSend("topic/stealing"+roomRepository.findCodeToConnectById(roomId),sourceDto1);
+
+       return CharacteristicArtifactStealing
+                .builder()
+                .characteristicName(characteristic.name())
+                .userName(firstUserName)
+                .userNewId(firstUserNewId)
+                .targetName(targetUserName)
+                .targetNewId(targetUserNewId)
+                .build();
 
 
 

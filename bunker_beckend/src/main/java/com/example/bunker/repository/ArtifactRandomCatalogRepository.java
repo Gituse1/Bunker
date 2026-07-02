@@ -4,14 +4,13 @@ import com.example.bunker.model.ArtifactRandomCatalog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface ArtifactRandomCatalogRepository  extends JpaRepository<ArtifactRandomCatalog,Long> {
 
-    @Query(value = "SELECT arc FROM ArtifactRandomCatalog arc ORDER BY RANDOM() LIMIT 4", nativeQuery = true)
+    @Query(value = "SELECT arc FROM ArtifactRandomCatalog arc ORDER BY RANDOM() LIMIT 4")
     List<ArtifactRandomCatalog> findRandomArtifact();
 
     @Query("""

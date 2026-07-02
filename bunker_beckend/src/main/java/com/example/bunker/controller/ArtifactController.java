@@ -1,7 +1,7 @@
 package com.example.bunker.controller;
 
+import com.example.bunker.dto.Artifact.DataToUsingArtifactRequest;
 import com.example.bunker.model.Effects;
-import com.example.bunker.model.characteristic.Characteristic;
 import com.example.bunker.service.ArtifactService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,36 +9,37 @@ import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("app/randomArtifact/using")
+@RequestMapping("api/randomArtifact/using")
 public class ArtifactController {
 
     private final ArtifactService artifactService;
 
-    @PutMapping("/purification")
-    public ResponseEntity<?> usePurification(@RequestBody Long artifactId,
-                                             @RequestBody Long roomId,
-                                             @RequestBody Long playerId,
-                                             @RequestBody Characteristic characteristicToChange){
+    @PutMapping("/purification/{roomId}")
+    public ResponseEntity<?> usePurification(@PathVariable Long roomId,@RequestBody DataToUsingArtifactRequest dataToUsingArtifactRequest){
 
-        artifactService.usePurification(artifactId,roomId,playerId,characteristicToChange);
+        artifactService.usePurification(dataToUsingArtifactRequest.getArtifactId(),
+                roomId,
+                dataToUsingArtifactRequest.getTargetPlayerId(),
+                dataToUsingArtifactRequest.getCharacteristicToChange());
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/protection")
+    @PutMapping("/protection/{roomId}")
     public ResponseEntity<?> useProtection(@RequestBody Long artifactId,
-                                           @RequestBody Long roomId){
+                                           @PathVariable Long roomId){
 
         artifactService.underEffect(artifactId,roomId, Effects.PROTECT);
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/espionage")
-    public ResponseEntity<?> useEspionage(@RequestBody Long artifactId,
-                                          @RequestBody Long roomId,
-                                          @RequestBody Long targetPlayerId,
-                                          @RequestBody Characteristic characteristic){
+    @PutMapping("/espionage/{roomId}")
+    public ResponseEntity<?> useEspionage(@RequestParam Long roomId,@RequestBody DataToUsingArtifactRequest dataToUsingArtifactRequest){
 
-        return ResponseEntity.ok(artifactService.useEspionage(artifactId,roomId,targetPlayerId,characteristic));
+        return ResponseEntity.ok(artifactService.useEspionage(
+                dataToUsingArtifactRequest.getArtifactId(),
+                roomId,
+                dataToUsingArtifactRequest.getTargetPlayerId(),
+                dataToUsingArtifactRequest.getCharacteristicToChange()));
     }
 
     @PutMapping("/stun")
@@ -48,19 +49,25 @@ public class ArtifactController {
         return ResponseEntity.ok(artifactService.underEffect(roomId,artifactId, Effects.STUN));
     }
 
-    @PutMapping("/stealing")
-    public ResponseEntity<?> useStealing(){
+    @PutMapping("/stealing/{roomId}")
+    public ResponseEntity<?> useStealing(@PathVariable Long roomId,@RequestBody DataToUsingArtifactRequest dataToUsingArtifactRequest){
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(artifactService.useStealing(
+                dataToUsingArtifactRequest.getArtifactId(),
+                roomId,
+                dataToUsingArtifactRequest.getTargetPlayerId(),
+                dataToUsingArtifactRequest.getCharacteristicToChange())
+        );
     }
 
-    @PutMapping("/curse")
-    private ResponseEntity<?> useCurse(@RequestBody Long artifactId,
-                                       @RequestBody Long roomId,
-                                       @RequestBody Long targetPlayerId,
-                                       @RequestBody Characteristic characteristicToChange){
+    @PutMapping("/curse/{roomId}")
+    private ResponseEntity<?> useCurse(@PathVariable Long roomId,@RequestBody DataToUsingArtifactRequest dataToUsingArtifactRequest){
 
-        artifactService.useCurse(artifactId,roomId,targetPlayerId,characteristicToChange);
+        artifactService.useCurse(
+                dataToUsingArtifactRequest.getArtifactId(),
+                roomId,
+                dataToUsingArtifactRequest.getTargetPlayerId(),
+                dataToUsingArtifactRequest.getCharacteristicToChange());
         return ResponseEntity.ok().build();
     }
 }

@@ -65,6 +65,7 @@ public class CharacteristicService {
 
     private PhysicalCondition getBalancedPhysicalCondition(StateOfHealth stateOfHealth) {
         return switch (stateOfHealth) {
+            case DEFAULT -> null;
             case HEALTHY -> getRandom(List.of(
                     PhysicalCondition.STRONG,
                     PhysicalCondition.STRONG,

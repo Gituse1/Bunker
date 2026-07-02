@@ -73,7 +73,7 @@ public class GameService {
 
 
         messagingTemplate.convertAndSend(
-                "/topic/game" +roomRepository.findCodeToConnectByRoomId(roomId),
+                "/topic/game" +roomRepository.findCodeToConnectById(roomId),
                 DataInStartGame.builder()
                         .gameData(gameData)
                         .visibilityOfCharacteristic(visibility)
@@ -159,7 +159,7 @@ public class GameService {
 
 
                     return GameData.builder()
-                            .userName(userName) // Або dto.getUserName(), якщо ім'я у кожного своє
+                            .userName(dto.getUserName())
                             .grown(userPlayer.getCharacter().getGrown())
                             .figure(userPlayer.getCharacter().getFigure().toString())
 

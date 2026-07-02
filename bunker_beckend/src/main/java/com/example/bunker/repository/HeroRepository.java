@@ -8,6 +8,6 @@ import java.util.Optional;
 
 public interface HeroRepository extends JpaRepository<Hero,Long> {
 
-    @Query(value = "SELECT h FROM Hero h ORDER BY RANDOM() LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT h FROM Hero h ORDER BY RANDOM() LIMIT 1")
     Optional<Hero> findHero();
 }

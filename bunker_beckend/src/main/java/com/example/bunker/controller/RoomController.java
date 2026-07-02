@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/app/room")
+@RequestMapping("/api/room")
 public class RoomController {
 
     private final RoomService roomService;
@@ -24,8 +24,8 @@ public class RoomController {
     private ResponseEntity<?> getAllRooms() {
         return ResponseEntity.ok(roomService.getAllRooms());
     }
-    @GetMapping("/continueToGame")
-    private ResponseEntity<?> continueToGame(@RequestBody Long roomId) {
+    @GetMapping("/continueToGame/{roomId}")
+    private ResponseEntity<?> continueToGame(@PathVariable Long roomId) {
         return ResponseEntity.ok(gameService.continueToGame(roomId));
     }
 

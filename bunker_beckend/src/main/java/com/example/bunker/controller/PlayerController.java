@@ -8,25 +8,25 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/app/player")
+@RequestMapping("/api/player")
 public class PlayerController {
 
     private  final PlayerService playerService;
 
-    @GetMapping("/hero")
-    public ResponseEntity<?> getHero(@RequestParam Long roomId){
+    @GetMapping("/hero/{roomId}")
+    public ResponseEntity<?> getHero(@PathVariable Long roomId){
 
         return ResponseEntity.ok(playerService.addHero(roomId));
     }
 
-    @GetMapping("/randomArtifacts")
-    public ResponseEntity<?> getRandomArtifacts(@RequestParam Long roomId){
+    @GetMapping("/randomArtifacts/{roomId}")
+    public ResponseEntity<?> getRandomArtifacts(@PathVariable Long roomId){
 
         return ResponseEntity.ok(playerService.findRandomArtifactCatalog(roomId));
     }
 
-    @GetMapping("/heroArtifacts")
-    public ResponseEntity<?> getHeroArtifacts(@RequestParam Long roomId){
+    @GetMapping("/heroArtifacts/{roomId}")
+    public ResponseEntity<?> getHeroArtifacts(@PathVariable Long roomId){
 
         return  ResponseEntity.ok(playerService.addHeroArtifacts(roomId));
     }

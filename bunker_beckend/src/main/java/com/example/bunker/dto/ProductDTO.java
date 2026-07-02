@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductDTO {
+    private String userName;
+    private String voteSelectedName =null;
     private Long heroId;
     private Long playerId;
     private Long characterId;
@@ -19,8 +21,11 @@ public class ProductDTO {
     private Long artifactRand1Id;
     private Long artifactRand2Id;
     private Long visibilityId;
+    private Long effectId;
     private boolean isProtected;
+    private Integer timeOfProtection =0;
     private boolean isStunned;
+    private Integer timeOfStunned =0;
     private StatusInGame statusInGame =StatusInGame.PREPARATION_FOR_THE_GAME;
 
 }

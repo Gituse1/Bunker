@@ -22,7 +22,7 @@ public class SessionService {
     public void updateSession(Long roomId, String userName, Consumer<ProductDTO> update){
 
         String key = redisTemplate(roomId,userName);
-        ProductDTO dto = redisTemplate.opsForValue().get(key);
+        ProductDTO dto =  redisTemplate.opsForValue().get(key);
 
         if(dto == null){
             dto = new ProductDTO();
@@ -50,7 +50,7 @@ public class SessionService {
         }
         List<ProductDTO> dto = redisTemplate.opsForValue().multiGet(keys);
 
-        if(dto.isEmpty()){
+        if (dto == null || dto.isEmpty()) {
             return Collections.emptyList();
         }
         return dto.stream()

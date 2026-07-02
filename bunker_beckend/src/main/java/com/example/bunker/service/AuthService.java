@@ -29,10 +29,10 @@ public class AuthService {
         log.info("registerUser dto={}",dto);
 
         if (userRepository.existsByUsername(dto.getUsername())) {
-            throw new IllegalArgumentException("Username вже зайнятий"+ dto.getUsername());
+            throw new IllegalArgumentException("Username вже зайнятий "+ dto.getUsername());
         }
         if (userRepository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Email вже зайнятий"+dto.getEmail());
+            throw new IllegalArgumentException("Email вже зайнятий "+dto.getEmail());
         }
         User user = UserRequestRegister.toUser(dto, passwordEncoder.encode(dto.getPassword()));
         user.setCreateDate(LocalDateTime.now());
@@ -46,10 +46,10 @@ public class AuthService {
 
         log.info("loginUser dto={}",dto);
         User user = userRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new EntityNotFoundException("Користувача не знайдено"+dto.getEmail()));
+                .orElseThrow(() -> new EntityNotFoundException("Користувача не знайдено "+dto.getEmail()));
 
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Невірний пароль"+dto.getPassword());
+            throw new BadCredentialsException("Невірний пароль "+dto.getPassword());
         }
 
         user.setLastVisit(LocalDateTime.now());

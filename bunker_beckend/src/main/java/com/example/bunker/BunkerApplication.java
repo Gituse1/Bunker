@@ -9,7 +9,11 @@ import org.springframework.cache.annotation.EnableCaching;
 public class BunkerApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(BunkerApplication.class, args);
+        try {
+            SpringApplication.run(BunkerApplication.class, args);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 	}
 
 }

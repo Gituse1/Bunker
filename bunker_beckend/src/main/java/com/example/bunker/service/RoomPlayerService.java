@@ -2,23 +2,25 @@ package com.example.bunker.service;
 
 import com.example.bunker.dto.ProductDTO;
 import com.example.bunker.dto.Room.RoomDataResponse;
-import com.example.bunker.model.Player;
-import com.example.bunker.model.Room;
-import com.example.bunker.model.RoomPlayer;
-import com.example.bunker.model.StatusInGame;
+import com.example.bunker.model.*;
 import com.example.bunker.projection.PlayerProjection;
+import com.example.bunker.repository.EffectRepository;
 import com.example.bunker.repository.PlayerRepository;
 import com.example.bunker.repository.RoomPlayerRepository;
 import com.example.bunker.repository.RoomRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.NoResultException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -28,11 +30,14 @@ public class RoomPlayerService {
     private final RoomPlayerRepository roomPlayerRepository;
     private final RoomRepository roomRepository;
     private final PlayerRepository  playerRepository;
+    private final EffectRepository effectRepository;
 
     private final PlayerService  playerService;
     private final SessionService  sessionService;
 
     private final AuthService authService;
+
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public RoomDataResponse connectToGame(String codeToConnect) {
@@ -103,7 +108,6 @@ public class RoomPlayerService {
        roomPlayer.setJoined(false);
 
        roomPlayerRepository.save(roomPlayer);
-        playerRepository.deleteById(roomPlayer.getPlayer().getId());
     }
 
     @Transactional
@@ -114,6 +118,121 @@ public class RoomPlayerService {
                 .build();
        return roomPlayerRepository.save(roomPlayer);
     }
+
+    public void playerExpulsion(Long roomId,String targetUserName){
+        String code = roomRepository.findCodeToConnectById(roomId).orElseThrow(
+                ()->new EntityNotFoundException("Code is not valid or something went wrong")
+        );
+        String name =authService.getCurrentUserName();
+        log.info("user : "+name+"playerExpulsion to player : "+targetUserName);
+
+        ProductDTO productDTO = sessionService.getSession(roomId,name);
+        productDTO.setVoteSelectedName(targetUserName);
+
+        sessionService.saveSession(roomId,name,productDTO);
+
+        messagingTemplate.convertAndSend("/topic/expulsion/"+code,name);
+
+    }
+
+    @Transactional
+    public void nextMove(Long roomId){
+        String name =authService.getCurrentUserName();
+        String roomCode= roomRepository.findCodeToConnectById(roomId).orElseThrow(
+                ()->new IllegalArgumentException("Room is not exist"));
+
+        log.info("user : "+name+"nextMove by room with id : "+roomId);
+
+        Room room =roomRepository.findById(roomId).orElseThrow(
+                ()->new EntityNotFoundException("Room is not exist in function nextMove"));
+        if(!room.getUser().getUsername().equals(name)){
+            throw new IllegalArgumentException("User is not a creator");
+        }
+        messagingTemplate.convertAndSend(
+                "/topic/next_move" +roomRepository.findCodeToConnectById(roomId),roomId);
+
+        List<ProductDTO> productDTOS= sessionService.getAllSessionByRoomId(roomId);
+
+        if(productDTOS.isEmpty()){
+            throw new IllegalArgumentException("Room by id "+roomId+"is not exist");
+        }
+        productDTOS =productDTOS.stream()
+                .filter(o ->o.getTimeOfProtection()>0||o.getTimeOfStunned()>0)
+                .toList();
+
+        for(ProductDTO productDTO:productDTOS){
+            productDTO.setTimeOfProtection(productDTO.getTimeOfProtection()-1);
+            if(productDTO.getTimeOfStunned()==1){
+                productDTO.setTimeOfStunned(0);
+                messagingTemplate.convertAndSendToUser(
+                        productDTO.getUserName(),
+                        "/topic/stun"+ roomCode,
+                        false
+                );
+            }
+            if(productDTO.getTimeOfProtection()==1){
+                productDTO.setTimeOfStunned(0);
+                messagingTemplate.convertAndSendToUser(
+                        productDTO.getUserName(),
+                        "/topic/protect"+roomCode,
+                        false
+                );
+            }
+            if(productDTO.getTimeOfStunned()>=0){
+                productDTO.setTimeOfStunned(productDTO.getTimeOfStunned()-1);
+            }
+            if(productDTO.getTimeOfProtection()>=0){
+                productDTO.setTimeOfProtection(productDTO.getTimeOfProtection()-1);
+            }
+        }
+
+    }
+
+    public void votingResults(Long roomId){
+        String name =authService.getCurrentUserName();
+        ProductDTO userDto =sessionService.getSession(roomId,name);
+
+        if(userDto.getUserName().equals(name)){
+            throw new IllegalArgumentException("User is not a creator");
+        }
+
+        String roomCode= roomRepository.findCodeToConnectById(roomId).orElseThrow(
+                ()->new EntityNotFoundException("Room is not exist"));
+        List<ProductDTO> productDTOS= sessionService.getAllSessionByRoomId(roomId);
+
+        Room room =roomRepository.findById(roomId).orElseThrow(
+                ()->new EntityNotFoundException("Room is not exist"));
+
+        if(productDTOS.isEmpty()){
+            throw new IllegalArgumentException("Room by id "+roomId+"is not exist");
+        }
+        boolean b = productDTOS.stream()
+                .noneMatch(o -> o.getVoteSelectedName() == null);
+
+        if(b){
+
+            Map<String, Long> usersPoints = productDTOS.stream()
+                    .collect(Collectors.groupingBy(
+                            ProductDTO::getVoteSelectedName,
+                            Collectors.counting()
+                    ));
+            long maxValue = usersPoints.values().stream()
+                    .mapToLong(Long::longValue)
+                    .max()
+                    .orElseThrow();
+
+            List<String> keys = usersPoints.entrySet().stream()
+                    .filter(e -> e.getValue() == maxValue)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+
+            messagingTemplate.convertAndSend("/topic/voting_results"+roomCode,keys);
+        }
+        else {
+            throw new NoResultException("Not all participants voted");
+        }
+    }
+
 
     private List<PlayerProjection> getUsersNameByRoomId(Long roomId){
         List<PlayerProjection> projection= roomPlayerRepository.findUserNameByRoomId(roomId);
@@ -148,6 +267,14 @@ public class RoomPlayerService {
             if(player.getSecondArtifactRandomCatalog()!=null){
                 dto.setArtifactRand2Id(player.getSecondArtifactRandomCatalog().getId());
             }
+            if(player.getEffect()!=null){
+                dto.setEffectId(player.getEffect().getId());
+            }
+            else {
+                Effect effect =effectRepository.save(new Effect());
+                dto.setEffectId(effect.getId());
+            }
+            dto.setUserName(authService.getCurrentUserName());
         };
     }
 }

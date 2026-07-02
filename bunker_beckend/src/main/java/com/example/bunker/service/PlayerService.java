@@ -142,6 +142,10 @@ public class PlayerService {
         }
 
         player.setArtifactHeroCatalog(artifactHeroCatalogResalt);
+
+        sessionService.updateSession(roomId,userName, dto ->{
+            dto.setArtifactHeroId(player.getArtifactHeroCatalog().getId());
+        });
         playerRepository.save(player);
 
         return artifactHeroCatalogResalt;
@@ -150,10 +154,9 @@ public class PlayerService {
 
     @Transactional
     public void addTwoArtifacts(Long id1, Long id2,Long roomId){
-
-
-        ProductDTO userData = sessionService.getSession(roomId, authService.getCurrentUserName());
         String userName = authService.getCurrentUserName();
+
+        ProductDTO userData = sessionService.getSession(roomId, userName);
 
         log.info("Adding two artifacts by userName:{}",userName);
        sessionService.updateSession(roomId,userName,dto->{
