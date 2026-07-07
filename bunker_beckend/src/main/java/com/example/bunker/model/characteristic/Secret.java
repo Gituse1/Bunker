@@ -6,6 +6,7 @@ public enum Secret {
     SECRETLY_INFECTED,
     CLAN_TRAITOR,
     SEEKS_CURE,
-    EXILED_BY_ORDER
+    EXILED_BY_ORDER,
+    NO_SECRET
 
 }

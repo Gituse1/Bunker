@@ -62,8 +62,8 @@ public enum Characteristic {
     ),
     HOBBY(
             VisibilityOfCharacteristic::isHobbyIsVisible,
-            source -> ((Hero)source).getHobby(),
-            (source,value) ->((Hero)source).setHobby(String.valueOf(Hobby.valueOf(value))),
+            source -> String.valueOf(((Hero)source).getHobby()),
+            (source,value) ->((Hero)source).setHobby(Hobby.valueOf(value)),
             ProductDTO::setHeroId
     ),
     INVENTORY1(

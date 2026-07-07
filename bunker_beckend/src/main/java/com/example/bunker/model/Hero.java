@@ -1,5 +1,6 @@
 package com.example.bunker.model;
 
+import com.example.bunker.model.characteristic.Hobby;
 import com.example.bunker.projection.CharacteristicSource;
 import jakarta.persistence.*;
 import lombok.*;
@@ -23,8 +24,8 @@ public class Hero implements CharacteristicSource {
     @Enumerated(EnumType.STRING)
     private Race race;
 
-    private String hobby;
+    private Hobby hobby;
 
-    @Column(columnDefinition = "text[]")
-    private String[] skills;
+    @Column(columnDefinition = "text")
+    private String skills;
 }

@@ -2,6 +2,7 @@ package com.example.bunker.dto.Player;
 
 import com.example.bunker.model.ActionTypeArtifact;
 import com.example.bunker.model.characteristic.Characteristic;
+import lombok.Data;
 
 public record GameEventDto(
 

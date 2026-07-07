@@ -132,8 +132,13 @@ public class ArtifactService {
                     characteristic,
                     newCharacteristic
             );
+
+
+            String roomCode = roomRepository.findCodeToConnectById(roomId)
+                    .orElseThrow(() -> new EntityNotFoundException("Room code not found"));
+
             messagingTemplate.convertAndSend(
-                    "/topic/purification." + roomRepository.findCodeToConnectById(roomId),
+                    "/topic/purification." + roomCode,
                     gameEventDto
             );
         }
@@ -162,13 +167,18 @@ public class ArtifactService {
             } else {
                 throw new NoResultException("There is nothing under the effect to under");
             }
+            return new PlayerEffectUpdateDto(
+                    effects.name(),
+                    durationOfEffect,
+                    true
+            );
 
         }
 
         return new PlayerEffectUpdateDto(
                 effects.name(),
-                durationOfEffect,
-                true
+                0,
+                false
         );
 
     }
@@ -218,6 +228,12 @@ public class ArtifactService {
             characteristicPlayer = characteristicRepository.save(characteristicPlayer);
 
             //Надсилання повідомлення
+            String newCharacteristicValue = switch (characteristic) {
+                case PHYSICAL_CONDITION -> characteristicPlayer.getPhysicalCondition().toString();
+                case PSYCHOLOGICAL_STATE -> characteristicPlayer.getPsyhologicalState().toString();
+                case FIGURE -> characteristicPlayer.getFigure().toString();
+                default -> throw new IllegalStateException("Unexpected value: " + characteristic);
+            };
 
             String targetUserName = playerRepository.findUserNameByPlayerId(targetPlayerId)
                     .orElseThrow(() -> new EntityNotFoundException("User name is not found"));
@@ -227,10 +243,13 @@ public class ArtifactService {
                     targetUserName,
                     ActionTypeArtifact.CURSE,
                     characteristic,
-                    characteristicPlayer.getFigure().toString()
+                    newCharacteristicValue // Виправлено тут
             );
+            String roomCode = roomRepository.findCodeToConnectById(roomId)
+                    .orElseThrow(() -> new EntityNotFoundException("Room code not found"));
+
             messagingTemplate.convertAndSend(
-                    "/topic/room." + roomRepository.findCodeToConnectById(roomId),
+                    "/topic/room." + roomCode,
                     gameEventDto
             );
 
@@ -279,7 +298,7 @@ public class ArtifactService {
                 .orElseThrow(() -> new EntityNotFoundException("User name is not found"));
 
         if(CHARACTERISTICS.stream().anyMatch(o -> o.name().equals(characteristic.name()))){
-            throw new  IllegalArgumentException("This characteristic can`t stale");
+            throw new  IllegalArgumentException("This characteristic can`t steal");
         }
         ProductDTO firstUser = sessionService.getSession(roomId, firstUserName);
         ProductDTO targetUser = sessionService.getSession(roomId, targetUserName);
@@ -295,7 +314,12 @@ public class ArtifactService {
         sessionService.saveSession(roomId,firstUserName,newFirstUser);
         sessionService.saveSession(roomId,targetUserName,newTargetUser);
 
-        messagingTemplate.convertAndSend("topic/stealing"+roomRepository.findCodeToConnectById(roomId),sourceDto1);
+        String roomCode = roomRepository.findCodeToConnectById(roomId)
+                .orElseThrow(() -> new EntityNotFoundException("Room code not found"));
+
+        messagingTemplate.convertAndSend(
+                "/topic/stealing." + roomCode,
+                sourceDto1);
 
        return CharacteristicArtifactStealing
                 .builder()
@@ -312,7 +336,7 @@ public class ArtifactService {
 
     }
 
-    private ProductDTORequest auditData(Long roomId, Long playerId) {
+    ProductDTORequest auditData(Long roomId, Long playerId) {
         String firstUserName = authService.getCurrentUserName();
 
         ProductDTO firstUser = sessionService.getSession(roomId, firstUserName);
@@ -339,7 +363,7 @@ public class ArtifactService {
                 .build();
     }
 
-    private CharacteristicSourceDto getCurrentTable(ProductDTO turgetProductDTO, ProductDTO userProductDTO, Characteristic characteristic) {
+    CharacteristicSourceDto getCurrentTable(ProductDTO turgetProductDTO, ProductDTO userProductDTO, Characteristic characteristic) {
 
         switch (characteristic) {
             case INVENTORY1 -> {
@@ -378,9 +402,9 @@ public class ArtifactService {
             }
             case PROFESSION, RASE, HOBBY -> {
                 Hero targetSource = heroRepository.findById(turgetProductDTO.getHeroId())
-                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for targetUser"));
+                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table PROFESSION, RASE, HOBBY not found for targetUser"));
                 Hero userSource = heroRepository.findById(userProductDTO.getHeroId())
-                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table RANDOM ARTIFACT not found for firstUser"));
+                        .orElseThrow(() -> new EntityNotFoundException("In get Current Table PROFESSION, RASE, HOBBY not found for firstUser"));
 
                 return CharacteristicSourceDto.builder()
                         .userCharacteristicSource(userSource)

@@ -15,7 +15,7 @@ public class HeroResponse {
         this.skills = hero.getSkills();
         this.profession = hero.getProfession();
         this.race = hero.getRace();
-        this.hobby = hero.getHobby();
+        this.hobby = hero.getHobby().name();
     }
     private String name;
     private Profession profession;
@@ -23,5 +23,5 @@ public class HeroResponse {
 
     private String hobby;
 
-    private String[] skills;
+    private String skills;
 }

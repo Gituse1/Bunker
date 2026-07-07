@@ -22,6 +22,8 @@ public enum Profession {
     APOCALYPSE_FOLLOWER,
 
     /** Штучна людина */
-    ARTIFICIAL_HUMAN
+    ARTIFICIAL_HUMAN,
+
+    DOCTOR
 
 }

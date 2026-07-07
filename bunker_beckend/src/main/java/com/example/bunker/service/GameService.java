@@ -71,9 +71,11 @@ public class GameService {
         VisibilityOfCharacteristic visibility = userPlayer.getVisibilityOfCharacteristic();
 
 
+        String roomCode = roomRepository.findCodeToConnectById(roomId)
+                .orElseThrow(() -> new EntityNotFoundException("Room code not found"));
 
         messagingTemplate.convertAndSend(
-                "/topic/game" +roomRepository.findCodeToConnectById(roomId),
+                "/topic/game." + roomCode,
                 DataInStartGame.builder()
                         .gameData(gameData)
                         .visibilityOfCharacteristic(visibility)
@@ -91,6 +93,8 @@ public class GameService {
         List<GameData> gameDataList = getGameDataForMultipleUsers(productDto,userName);
 
         messagingTemplate.convertAndSendToUser(userName,userName,gameDataList);
+
+
         return DataToUserInStartGame.builder()
                 .otherUserGameDataList(gameDataList)
                 .userGameData(gameData)
