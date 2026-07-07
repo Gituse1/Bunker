@@ -60,7 +60,7 @@ public class RoomPlayerService {
                 });
 
         // Якщо витягнули вже існуючого
-        if(roomPlayer.getPlayer().getStatus().equals(StatusInGame.WAS_LEFT_EARLIER)){
+        if(roomPlayer.getPlayer().getStatus() == StatusInGame.WAS_LEFT_EARLIER ){
             roomPlayer.getPlayer().setStatus(StatusInGame.PREPARATION_FOR_THE_GAME);
         }
 
@@ -97,7 +97,7 @@ public class RoomPlayerService {
        RoomPlayer roomPlayer= roomPlayerRepository.findByIdCurrentRoomPlayer(roomPlayerId,name).orElseThrow(
                ()->new IllegalArgumentException("Player is not exist"));
 
-       if(roomPlayer.getPlayer().getStatus().equals(StatusInGame.PREPARATION_FOR_THE_GAME)){
+       if(roomPlayer.getPlayer().getStatus() == StatusInGame.PREPARATION_FOR_THE_GAME ){
            sessionService.deleteSession(roomPlayer.getRoom().getId(),name);
 
            playerRepository.deleteById(roomPlayer.getPlayer().getId());
@@ -148,8 +148,9 @@ public class RoomPlayerService {
         if(!room.getUser().getUsername().equals(name)){
             throw new IllegalArgumentException("User is not a creator");
         }
-        messagingTemplate.convertAndSend(
-                "/topic/next_move" +roomRepository.findCodeToConnectById(roomId),roomId);
+
+        // Виправлена конкатенація та додана крапка
+        messagingTemplate.convertAndSend("/topic/next_move" + roomCode, roomId);
 
         List<ProductDTO> productDTOS= sessionService.getAllSessionByRoomId(roomId);
 
@@ -161,29 +162,29 @@ public class RoomPlayerService {
                 .toList();
 
         for(ProductDTO productDTO:productDTOS){
-            productDTO.setTimeOfProtection(productDTO.getTimeOfProtection()-1);
             if(productDTO.getTimeOfStunned()==1){
                 productDTO.setTimeOfStunned(0);
                 messagingTemplate.convertAndSendToUser(
                         productDTO.getUserName(),
-                        "/topic/stun"+ roomCode,
+                        "/topic/stun" + roomCode,
                         false
                 );
             }
             if(productDTO.getTimeOfProtection()==1){
-                productDTO.setTimeOfStunned(0);
+                productDTO.setTimeOfProtection(0);
                 messagingTemplate.convertAndSendToUser(
                         productDTO.getUserName(),
-                        "/topic/protect"+roomCode,
+                        "/topic/protect" + roomCode,
                         false
                 );
             }
-            if(productDTO.getTimeOfStunned()>=0){
+            if(productDTO.getTimeOfStunned()>1){
                 productDTO.setTimeOfStunned(productDTO.getTimeOfStunned()-1);
             }
-            if(productDTO.getTimeOfProtection()>=0){
+            if(productDTO.getTimeOfProtection()>1){
                 productDTO.setTimeOfProtection(productDTO.getTimeOfProtection()-1);
             }
+            sessionService.saveSession(roomId, productDTO.getUserName(), productDTO);
         }
 
     }
@@ -192,16 +193,19 @@ public class RoomPlayerService {
         String name =authService.getCurrentUserName();
         ProductDTO userDto =sessionService.getSession(roomId,name);
 
-        if(userDto.getUserName().equals(name)){
+        Room room =roomRepository.findRoomAndUserBy(roomId).orElseThrow(
+                ()->new EntityNotFoundException("Room is not exist"));
+
+
+        if(!userDto.getUserName().equals(room.getUser().getUsername())){
             throw new IllegalArgumentException("User is not a creator");
         }
+
 
         String roomCode= roomRepository.findCodeToConnectById(roomId).orElseThrow(
                 ()->new EntityNotFoundException("Room is not exist"));
         List<ProductDTO> productDTOS= sessionService.getAllSessionByRoomId(roomId);
 
-        Room room =roomRepository.findById(roomId).orElseThrow(
-                ()->new EntityNotFoundException("Room is not exist"));
 
         if(productDTOS.isEmpty()){
             throw new IllegalArgumentException("Room by id "+roomId+"is not exist");
@@ -226,7 +230,7 @@ public class RoomPlayerService {
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toList());
 
-            messagingTemplate.convertAndSend("/topic/voting_results"+roomCode,keys);
+            messagingTemplate.convertAndSend("/topic/voting_results/"+roomCode,keys);
         }
         else {
             throw new NoResultException("Not all participants voted");
@@ -234,7 +238,7 @@ public class RoomPlayerService {
     }
 
 
-    private List<PlayerProjection> getUsersNameByRoomId(Long roomId){
+    List<PlayerProjection> getUsersNameByRoomId(Long roomId){
         List<PlayerProjection> projection= roomPlayerRepository.findUserNameByRoomId(roomId);
         if(projection.isEmpty()){
             throw new IllegalArgumentException("Players is not found but code is valid");
@@ -242,9 +246,7 @@ public class RoomPlayerService {
         return projection;
     }
 
-
-
-    private Consumer<ProductDTO> preparingRequest(RoomPlayer roomPlayer){
+    Consumer<ProductDTO> preparingRequest(RoomPlayer roomPlayer){
         Player player = roomPlayer.getPlayer();
         return dto -> {
             dto.setPlayerId(player.getId());

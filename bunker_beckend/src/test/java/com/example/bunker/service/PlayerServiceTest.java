@@ -3,6 +3,7 @@ package com.example.bunker.service;
 import com.example.bunker.dto.Hero.HeroResponse;
 import com.example.bunker.dto.ProductDTO;
 import com.example.bunker.model.*;
+import com.example.bunker.model.characteristic.Hobby;
 import com.example.bunker.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.NoResultException;
@@ -424,6 +425,10 @@ class PlayerServiceTest {
     public Hero getTestHero(){
         return Hero.builder()
                 .id(2L)
+                .hobby(Hobby.READING) // Заміни на існуюче значення з твого enum Hobby
+                .profession(Profession.DOCTOR) // Заміни на існуюче значення з Profession
+                .race(Race.HUMAN) // Заміни на існуюче значення з Race
+                .skills("Test skill")
                 .build();
     }
 

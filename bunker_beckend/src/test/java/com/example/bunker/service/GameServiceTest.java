@@ -87,7 +87,7 @@ class GameServiceTest {
             verify(sessionService).updateSession(eq(roomId), eq(userName), any());
 
             // Перевірка відправки повідомлень
-            verify(messagingTemplate).convertAndSend(eq("/topic/game." + roomCode), any(DataInStartGame.class));
+            verify(messagingTemplate).convertAndSend(eq("/topic/game/" + roomCode), any(DataInStartGame.class));
             verify(messagingTemplate).convertAndSendToUser(eq(userName), eq(userName), anyList());
         }
 

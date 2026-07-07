@@ -9,7 +9,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RoomRepository extends JpaRepository<Room,Long> {
-    Optional<Room> findById(long id);
+
+    @Query("""
+            Select r FROM Room r
+            JOIN FETCH r.user u
+            Where r.is = :roomId
+            """)
+    Optional<Room> findRoomAndUserBy(@Param("roomId") long id);
 
     @Query("""
             SELECT r FROM Room r
@@ -29,5 +35,7 @@ public interface RoomRepository extends JpaRepository<Room,Long> {
     Optional<Room> findRoomByCodeToConnect(String codeToConnect);
 
     Optional<String> findCodeToConnectById(Long  Id);
+
+
 
 }

@@ -75,7 +75,7 @@ public class GameService {
                 .orElseThrow(() -> new EntityNotFoundException("Room code not found"));
 
         messagingTemplate.convertAndSend(
-                "/topic/game." + roomCode,
+                "/topic/game/" + roomCode,
                 DataInStartGame.builder()
                         .gameData(gameData)
                         .visibilityOfCharacteristic(visibility)

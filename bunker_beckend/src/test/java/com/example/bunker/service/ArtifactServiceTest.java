@@ -12,7 +12,6 @@ import com.example.bunker.model.characteristic.Characteristic;
 import com.example.bunker.model.characteristic.Figure;
 import com.example.bunker.model.characteristic.PhysicalCondition;
 import com.example.bunker.model.characteristic.PsychologicalState;
-import com.example.bunker.projection.CharacteristicSource;
 import com.example.bunker.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.NoResultException;
@@ -85,7 +84,7 @@ class ArtifactServiceTest {
             assertEquals(PhysicalCondition.WOUNDED, characteristicPlayer.getPhysicalCondition());
 
             ArgumentCaptor<GameEventDto> eventCaptor = ArgumentCaptor.forClass(GameEventDto.class);
-            verify(messagingTemplate).convertAndSend(eq("/topic/purification.ROOM_CODE"), eventCaptor.capture());
+            verify(messagingTemplate).convertAndSend(eq("/topic/purification/ROOM_CODE"), eventCaptor.capture());
 
             GameEventDto sentEvent = eventCaptor.getValue();
             assertEquals("targetUser", sentEvent.playerName());
@@ -707,7 +706,7 @@ class ArtifactServiceTest {
 
             verify(sessionService).saveSession(eq(roomId), eq(firstUserName), any(ProductDTO.class));
             verify(sessionService).saveSession(eq(roomId), eq(targetUserName), any(ProductDTO.class));
-            verify(messagingTemplate).convertAndSend(eq("/topic/stealing.ROOM_CODE"), any(CharacteristicSourceDto.class));
+            verify(messagingTemplate).convertAndSend(eq("/topic/stealing/ROOM_CODE"), any(CharacteristicSourceDto.class));
         }
 
         @Test

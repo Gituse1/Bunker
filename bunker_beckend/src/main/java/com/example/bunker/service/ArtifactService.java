@@ -138,7 +138,7 @@ public class ArtifactService {
                     .orElseThrow(() -> new EntityNotFoundException("Room code not found"));
 
             messagingTemplate.convertAndSend(
-                    "/topic/purification." + roomCode,
+                    "/topic/purification/" + roomCode,
                     gameEventDto
             );
         }
@@ -318,7 +318,7 @@ public class ArtifactService {
                 .orElseThrow(() -> new EntityNotFoundException("Room code not found"));
 
         messagingTemplate.convertAndSend(
-                "/topic/stealing." + roomCode,
+                "/topic/stealing/" + roomCode,
                 sourceDto1);
 
        return CharacteristicArtifactStealing

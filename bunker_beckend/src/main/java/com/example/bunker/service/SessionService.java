@@ -2,6 +2,7 @@ package com.example.bunker.service;
 
 import com.example.bunker.dto.ProductDTO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +10,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class SessionService {
@@ -44,8 +46,13 @@ public class SessionService {
         String keyPattern = "session"+roomId + ":*";
 
         Set<String > keys =redisTemplate.keys(keyPattern);
+        if(keys==null) {
+            log.warn("keys is null");
+            throw new IllegalArgumentException("Keys is null");
+        }
 
         if(keys.isEmpty()){
+            log.warn("Keys is empty");
             return Collections.emptyList();
         }
         List<ProductDTO> dto = redisTemplate.opsForValue().multiGet(keys);
@@ -53,6 +60,7 @@ public class SessionService {
         if (dto == null || dto.isEmpty()) {
             return Collections.emptyList();
         }
+
         return dto.stream()
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

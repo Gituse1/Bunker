@@ -41,8 +41,8 @@ public class RoomService {
 
         room.setCreatedAt(LocalDateTime.now());
         room.setIfFinished(false);
-        room=roomRepository.save(room);
         room.setCodeToConnect(generateToken());
+        room=roomRepository.save(room);
 
         long roomPlayerId =roomPlayerService.createRoomPlayer(room).getId();
 
