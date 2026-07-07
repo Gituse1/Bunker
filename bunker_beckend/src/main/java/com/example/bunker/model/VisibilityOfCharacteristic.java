@@ -1,10 +1,16 @@
 package com.example.bunker.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class VisibilityOfCharacteristic {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

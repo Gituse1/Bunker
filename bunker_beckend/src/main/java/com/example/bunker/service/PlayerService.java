@@ -6,6 +6,7 @@ import com.example.bunker.model.*;
 import com.example.bunker.repository.*;
 import com.example.bunker.repository.VisibilityOfCharacteristicRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.NoResultException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ import java.util.List;
 @Slf4j
 public class PlayerService {
 
-    public static final int MAX_NUMBER_OF_CYCLES =20;
+    public static final int MAX_NUMBER_OF_CYCLES =5;
 
     private final AuthService authService;
     private final SessionService sessionService;
@@ -35,12 +36,16 @@ public class PlayerService {
 
     @Transactional
     public Player createPlayer(Long roomId){
+        if(roomId == null||roomId<=0){
+            throw new IllegalArgumentException("Room Id can't be null or empty");
+        }
+
         String userName = authService.getCurrentUserName();
 
         log.info("Creating player by userName:{}",userName);
 
         User user= userRepository.findByUsername(userName)
-               .orElseThrow(()-> new EntityNotFoundException("User not found" + userName));
+               .orElseThrow(()-> new EntityNotFoundException("User not found " + userName));
 
         Player player= playerRepository.findByStatusAndUser(user.getId(),StatusInGame.PREPARATION_FOR_THE_GAME).orElseGet(
                ()-> buildNewPlayer(user,roomId) // тут вся логіка створення нового гравця
@@ -57,7 +62,7 @@ public class PlayerService {
         return playerRepository.save(player);
     }
 
-
+    @Transactional
     public List<ArtifactRandomCatalog> findRandomArtifactCatalog(Long roomId){
 
         String userName = authService.getCurrentUserName();
@@ -70,9 +75,6 @@ public class PlayerService {
         List<ArtifactRandomCatalog> artifactRandomCatalogs;
         do {
             numbCycles++;
-            if(numbCycles>MAX_NUMBER_OF_CYCLES){
-                throw new RuntimeException("Maximum number of cycles reached because most of all RANDOM ARTIFACTS have been busy");
-            }
              artifactRandomCatalogs = artifactRandomCatalogRepository.findRandomArtifact();
                    if(artifactRandomCatalogs.isEmpty()){
                        throw  new EntityNotFoundException("Artifacts not added to database or is problem with request");
@@ -85,6 +87,9 @@ public class PlayerService {
                             )
                     )
                     .count();
+            if(numbCycles>MAX_NUMBER_OF_CYCLES){
+                throw new NoResultException("Maximum number of cycles reached because most of all RANDOM ARTIFACTS have been busy");
+            }
             if(numbCycles>MAX_NUMBER_OF_CYCLES/2){
                 log.warn("In findRandomArtifactCatalog is so many cycles");
             }
@@ -92,6 +97,7 @@ public class PlayerService {
         return  artifactRandomCatalogs;
     }
 
+    @Transactional
     public ArtifactHeroCatalog addHeroArtifacts(Long roomId){
         String userName = authService.getCurrentUserName();
 
@@ -115,7 +121,7 @@ public class PlayerService {
                    .count();
 
             if(numbCycles>MAX_NUMBER_OF_CYCLES){
-                throw new RuntimeException("Maximum number of cycles reached because most of all HERO ARTIFACTS have been busy");
+                throw new NoResultException("Maximum number of cycles reached because most of all HERO ARTIFACTS have been busy");
             }
             if(numbCycles>MAX_NUMBER_OF_CYCLES/2){
                 log.warn("In addHeroArtifacts is so many cycles");
@@ -153,7 +159,7 @@ public class PlayerService {
     }
 
     @Transactional
-    public void addTwoArtifacts(Long id1, Long id2,Long roomId){
+    public void addTwoRandomArtifacts(Long id1, Long id2, Long roomId){
         String userName = authService.getCurrentUserName();
 
         ProductDTO userData = sessionService.getSession(roomId, userName);
@@ -246,13 +252,13 @@ public class PlayerService {
         VisibilityOfCharacteristic visibility = visibilityOfCharacteristicRepository.save(visibilityOfCharacteristic);
 
 
-        return playerRepository.save(Player.builder()
+        return Player.builder()
                 .user(user)
                 .artifactHeroCatalog(artifactHeroCatalog)
                 .character(characteristicPlayer)
                 .createdAt(LocalDateTime.now())
                 .visibilityOfCharacteristic(visibility)
                 .status(StatusInGame.PREPARATION_FOR_THE_GAME)
-                .build());
+                .build();
     }
 }

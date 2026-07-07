@@ -1,6 +1,5 @@
 package com.example.bunker.controller;
 
-import com.example.bunker.dto.Player.PlayerArtifactResponse;
 import com.example.bunker.service.PlayerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +36,7 @@ public class PlayerController {
     public ResponseEntity<?> postTwoArtifacts( @RequestParam Long id1,
                                                @RequestParam Long id2,
                                                @RequestParam Long roomId){
-        playerService.addTwoArtifacts(id1,id2,roomId);
+        playerService.addTwoRandomArtifacts(id1,id2,roomId);
         return ResponseEntity.ok().build();
     }
 
